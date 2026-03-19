@@ -1,1547 +1,1606 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Talk Navigator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Pinyon+Script&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <style type="text/tailwindcss">
-        body { font-family:'Noto Sans JP',sans-serif; background-color:#FFFBF7; color:#6d5849; -webkit-tap-highlight-color:transparent; }
-        h1,h2,h3,.font-serif { font-family:'Noto Serif JP',serif; }
-        .font-princess { font-family:'Pinyon Script',cursive; }
-        .warm-pink { color:#E68A91; }
-        .bg-warm-pink { background-color:#E68A91; }
-        .warm-beige-bg { background-color:#FDF6F0; }
-        .step-screen { animation:fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        .btn { @apply w-full sm:w-auto text-lg sm:text-xl font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4; }
-        .btn-primary { @apply bg-warm-pink hover:opacity-80 text-white focus:ring-pink-300; }
-        .btn-secondary { @apply bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 focus:ring-gray-300; }
-        .btn-selected { @apply bg-warm-pink ring-4 ring-pink-300 text-white border-transparent; }
-        .input-field { @apply w-full max-w-sm bg-white border-2 border-gray-300 text-gray-800 text-xl rounded-lg p-3 text-center focus:outline-none focus:ring-4 focus:ring-pink-300 focus:border-pink-300 transition-shadow; }
-        .highlight { @apply text-yellow-500 font-bold; }
-        .hidden { display:none; }
-        .modal-overlay { @apply fixed inset-0 bg-black bg-opacity-60 z-50 transition-opacity duration-300; }
-        .modal-container { @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl z-50 transition-all duration-300 p-6 overflow-hidden; }
-        .modal-content { @apply h-full overflow-y-auto pr-2; scrollbar-width:thin; scrollbar-color:#E68A91 #FDF6F0; }
-        .modal-close-btn { @apply absolute top-4 right-5 text-gray-400 hover:text-gray-800 text-3xl transition-colors; }
-        /* ===== SCRIPT PANEL ===== */
-        #script-drawer {
-            position:fixed; bottom:56px; left:0; right:0; max-height:48vh;
-            background:#0f172a; color:#e2e8f0; z-index:48;
-            transition:transform 0.3s ease-in-out; transform:translateY(100%);
-            border-top:3px solid #E68A91; display:flex; flex-direction:column;
-        }
-        #script-drawer.open { transform:translateY(0); }
-        #script-drawer-header {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:8px 16px; background:#1e293b; border-bottom:1px solid #334155; flex-shrink:0;
-        }
-        #script-drawer-body { overflow-y:auto; padding:12px 16px; flex:1; }
-        .sp-role { color:#f472b6; font-size:0.75rem; border:1px solid #f472b6; border-radius:999px; padding:2px 10px; display:inline-block; margin-bottom:10px; }
-        .sp-line { margin-bottom:8px; line-height:1.7; font-size:0.9rem; }
-        .sp-tag { font-weight:bold; padding:1px 6px; border-radius:4px; font-size:0.78rem; margin-right:4px; }
-        .tag-r { background:#14532d; color:#4ade80; }
-        .tag-q { background:#431407; color:#fb923c; }
-        .tag-m { background:#1e3a5f; color:#60a5fa; }
-        .tag-t { background:#2e1065; color:#c084fc; font-style:italic; }
-        /* ===== HERO SCREEN (1画面完結型) ===== */
-        .hero-wrap {
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            min-height:72vh; padding:1rem 1.25rem; text-center;
-        }
-        .hero-label { font-size:0.875rem; color:#9CA3AF; letter-spacing:0.15em; margin-bottom:0.5rem; text-align:center; }
-        .hero-main-text {
-            font-family:'Noto Serif JP',serif; font-weight:900; line-height:1.15; text-align:center;
-            font-size:clamp(1.75rem,6.5vw,3.25rem); color:#111827; margin:0.75rem 0;
-        }
-        .hero-accent { color:#B45309; }
-        .hero-number { font-size:clamp(2.5rem,11vw,5.5rem); color:#B45309; font-weight:900; line-height:1; display:block; }
-        .hero-sub { font-size:clamp(1rem,3vw,1.25rem); color:#374151; line-height:1.8; text-align:center; max-width:36rem; margin:0.5rem auto; }
-        .hero-detail-text { font-size:0.9rem; color:#6B7280; line-height:1.7; text-align:center; max-width:32rem; margin:0.5rem auto; }
-        .hero-card {
-            width:100%; max-width:28rem; margin:0.75rem auto; border-radius:1rem; padding:1.25rem 1.5rem;
-            text-align:center;
-        }
-        .hero-card-amber { background:#FEF3C7; border:2px solid #F59E0B; }
-        .hero-card-gray { background:#F9FAFB; text-align:left; border-radius:0.75rem; padding:1rem 1.25rem; }
-        .hero-card-quote { background:#F9FAFB; border-left:4px solid #D97706; text-align:left; border-radius:0 0.75rem 0.75rem 0; padding:1rem 1.25rem; }
-        .hero-calc-row { margin-bottom:0.25rem; }
-        .hero-calc-label { color:#374151; font-size:0.95rem; }
-        .hero-calc-num { color:#B45309; font-weight:700; }
-        .hero-calc-big { font-size:1.25rem; font-weight:700; color:#111827; }
-
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Talk Navigator | お客様の新しい物語が始まる</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Pinyon+Script&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style type="text/tailwindcss">
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #FFFBF7; color: #6d5849; -webkit-tap-highlight-color: transparent; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif JP', serif; }
+        .font-princess { font-family: 'Pinyon Script', cursive; }
+        .warm-pink { color: #E68A91; }
+        .bg-warm-pink { background-color: #E68A91; }
+        .warm-beige-bg { background-color: #FDF6F0; }
+        .step-screen { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .btn { @apply w-full sm:w-auto text-lg sm:text-xl font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4; }
+        .btn-primary { @apply bg-warm-pink hover:opacity-80 text-white focus:ring-pink-300; }
+        .btn-secondary { @apply bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 focus:ring-gray-300; }
+        .btn-selected { @apply bg-warm-pink ring-4 ring-pink-300 text-white border-transparent; }
+        .input-field { @apply w-full max-w-sm bg-white border-2 border-gray-300 text-gray-800 text-xl rounded-lg p-3 text-center focus:outline-none focus:ring-4 focus:ring-pink-300 focus:border-pink-300 transition-shadow; }
+        .highlight { @apply text-yellow-500 font-bold; }
+        .hidden { display: none; }
+        .sns-post { @apply bg-white p-4 rounded-lg shadow-md max-w-md mx-auto text-left border border-gray-200; }
+        .sns-text { @apply text-2xl leading-relaxed; }
+        .sns-text strong { @apply font-bold text-blue-600; }
+        .modal-overlay { @apply fixed inset-0 bg-black bg-opacity-60 z-50 transition-opacity duration-300; }
+        .modal-container { @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl z-50 transition-all duration-300 p-6 overflow-hidden; }
+        .modal-content { @apply h-full overflow-y-auto pr-2; scrollbar-width: thin; scrollbar-color: #E68A91 #FDF6F0; }
+        .modal-close-btn { @apply absolute top-4 right-5 text-gray-400 hover:text-gray-800 text-3xl transition-colors; }
+        
+        /* ===== SCRIPT PANEL (カンペ機能) ===== */
+        #script-drawer {
+            position: fixed; bottom: 56px; left: 0; right: 0; max-height: 48vh;
+            background: #0f172a; color: #e2e8f0; z-index: 48;
+            transition: transform 0.3s ease-in-out; transform: translateY(100%);
+            border-top: 3px solid #E68A91; display: flex; flex-direction: column;
+        }
+        #script-drawer.open { transform: translateY(0); }
+        #script-drawer-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0;
+        }
+        #script-drawer-body { overflow-y: auto; padding: 12px 16px; flex: 1; }
+        .sp-role { color: #f472b6; font-size: 0.75rem; border: 1px solid #f472b6; border-radius: 999px; padding: 2px 10px; display: inline-block; margin-bottom: 10px; }
+        .sp-line { margin-bottom: 8px; line-height: 1.7; font-size: 0.9rem; }
+        .sp-tag { font-weight: bold; padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; margin-right: 4px; }
+        .tag-r { background: #14532d; color: #4ade80; }
+        .tag-q { background: #431407; color: #fb923c; }
+        .tag-m { background: #1e3a5f; color: #60a5fa; }
+        .tag-t { background: #2e1065; color: #c084fc; font-style: italic; }
+    </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 pb-20">
+
 <div id="hearing-summary-container" class="fixed top-0 left-0 w-full bg-white/90 backdrop-blur-sm shadow-md z-50 p-2 hidden">
-    <div id="hearing-summary-bar" class="max-w-3xl mx-auto flex flex-wrap gap-2 items-center"></div>
+    <div id="hearing-summary-bar" class="max-w-3xl mx-auto flex flex-wrap gap-2 items-center"></div>
 </div>
+
 <div id="navigator-container" class="w-full max-w-3xl mx-auto pt-16">
 
-<!-- STEP 0 -->
 <div id="step-0" class="step-screen text-center space-y-8">
-    <h1 class="text-4xl sm:text-6xl font-serif font-bold warm-pink">✨ Smart Talk Navigator</h1>
-    <p class="text-xl sm:text-2xl text-gray-700">お住まいについての質問4つだけご協力お願いします。</p>
-    <button data-action="next-step" data-step="1.1" class="btn btn-primary text-2xl sm:text-3xl px-12 py-6">▷スタート</button>
+    <h1 class="text-4xl sm:text-6xl font-serif font-bold warm-pink">✨ Smart Talk Navigator</h1>
+    <p class="text-xl sm:text-2xl text-gray-700">お住まいについての質問4つだけご協力お願いします。</p>
+    <button data-action="next-step" data-step="1.1" class="btn btn-primary text-2xl sm:text-3xl px-12 py-6">▷スタート</button>
 </div>
 
-<!-- STEP 1.1 -->
 <div id="step-1.1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🏡 お住まいは戸建てでしょうか</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="housingType" data-value="戸建て" data-step="1.1c" class="btn btn-primary">はい、戸建てです</button>
-        <button data-action="next-step" data-step="1.1_ank" class="btn btn-secondary">いいえ</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🏡 お住まいは戸建てでしょうか</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="housingType" data-value="戸建て" data-step="1.1c" class="btn btn-primary">はい、戸建てです</button>
+        <button data-action="next-step" data-step="1.1_ank" class="btn btn-secondary">いいえ</button>
+    </div>
 </div>
 
 <div id="step-1.1_ank" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アンケート完了</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">ご協力いただき、ありがとうございました。</h2>
+    <p class="text-lg text-gray-500">アンケート完了</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">ご協力いただき、<br>ありがとうございました。</h2>
 </div>
 
-<!-- STEP 1.1c -->
 <div id="step-1.1c" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">築年数はどのくらいですか？</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="buildingAge" data-value="1年～4年" data-step="1.1a" class="btn btn-secondary">1～4年</button>
-        <button data-action="store-and-next" data-key="buildingAge" data-value="5年～7年" data-step="1.1a" class="btn btn-secondary">5～7年</button>
-        <button data-action="store-and-next" data-key="buildingAge" data-value="8年～9年" data-step="1.1a" class="btn btn-secondary">8～9年</button>
-        <button data-action="store-and-next" data-key="buildingAge" data-value="10年～12年" data-step="1.1a" class="btn btn-secondary">10～12年</button>
-        <button data-action="store-and-next" data-key="buildingAge" data-value="13年～14年" data-step="1.1a" class="btn btn-secondary">13～14年</button>
-        <button data-action="store-and-next" data-key="buildingAge" data-value="15年以上" data-step="1.1a" class="btn btn-secondary">15年以上</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif"><br>築年数はどのくらいですか？</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="buildingAge" data-value="1年～4年" data-step="1.1a" class="btn btn-secondary">1～4年</button>
+        <button data-action="store-and-next" data-key="buildingAge" data-value="5年～7年" data-step="1.1a" class="btn btn-secondary">5～7年</button>
+        <button data-action="store-and-next" data-key="buildingAge" data-value="8年～9年" data-step="1.1a" class="btn btn-secondary">8～9年</button>
+        <button data-action="store-and-next" data-key="buildingAge" data-value="10年～12年" data-step="1.1a" class="btn btn-secondary">10～12年</button>
+        <button data-action="store-and-next" data-key="buildingAge" data-value="13年～14年" data-step="1.1a" class="btn btn-secondary">13～14年</button>
+        <button data-action="store-and-next" data-key="buildingAge" data-value="15年以上" data-step="1.1a" class="btn btn-secondary">15年以上</button>
+    </div>
 </div>
 
-<!-- STEP 1.1a -->
 <div id="step-1.1a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🔥光熱費は電気だけですか？<br>ガスも使われていますか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="utilityType" data-value="オール電化" data-step="1.2" class="btn btn-primary">オール電化</button>
-        <button data-action="store-and-next" data-key="utilityType" data-value="ガス併用" data-step="1.2" class="btn btn-secondary">ガス併用</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🔥光熱費は電気だけですか？<br>ガスも使われていますか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="utilityType" data-value="オール電化" data-step="1.2" class="btn btn-primary">オール電化</button>
+        <button data-action="store-and-next" data-key="utilityType" data-value="ガス併用" data-step="1.2" class="btn btn-secondary">ガス併用</button>
+    </div>
 </div>
 
-<!-- STEP 1.2 -->
 <div id="step-1.2" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">💡 月々の光熱費は<br>だいたい、おいくらでしょう？</h2>
-    <div class="flex flex-col items-center space-y-4 w-full px-4">
-        <div id="utility-input-electric" class="relative w-full max-w-sm">
-            <label for="electric-bill-input" class="text-lg mb-2 block">電気代</label>
-            <input type="number" id="electric-bill-input" class="input-field" placeholder="例: 15000">
-            <span class="absolute right-4 top-1/2 mt-3 -translate-y-1/2 text-xl text-gray-400">円</span>
-        </div>
-        <div id="utility-input-gas" class="relative w-full max-w-sm hidden">
-            <label for="gas-bill-input" class="text-lg mb-2 block">ガス代</label>
-            <input type="number" id="gas-bill-input" class="input-field" placeholder="例: 5000">
-            <span class="absolute right-4 top-1/2 mt-3 -translate-y-1/2 text-xl text-gray-400">円</span>
-        </div>
-        <div class="text-sm mt-2">
-            <a href="#" id="show-average-cost" class="text-blue-600 hover:underline">電気代が不明な場合はこちら</a>
-        </div>
-        <div id="average-cost-info" class="hidden warm-beige-bg p-2 rounded-lg text-sm mt-2">
-            <p><strong>ご参考(月平均):</strong> 2人世帯: 約10,000円, 4人世帯: 約13,000円</p>
-        </div>
-        <button data-action="submit-utility-cost" class="btn btn-primary mt-4">入力完了</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">💡 月々の光熱費は<br>だいたい、おいくらでしょう？</h2>
+    <div class="flex flex-col items-center space-y-4 w-full px-4">
+        <div id="utility-input-electric" class="relative w-full max-w-sm">
+            <label for="electric-bill-input" class="text-lg mb-2 block">電気代</label>
+            <input type="number" id="electric-bill-input" class="input-field" placeholder="例: 15000">
+            <span class="absolute right-4 top-1/2 mt-3 -translate-y-1/2 text-xl text-gray-400">円</span>
+        </div>
+        <div id="utility-input-gas" class="relative w-full max-w-sm hidden">
+            <label for="gas-bill-input" class="text-lg mb-2 block">ガス代</label>
+            <input type="number" id="gas-bill-input" class="input-field" placeholder="例: 5000">
+            <span class="absolute right-4 top-1/2 mt-3 -translate-y-1/2 text-xl text-gray-400">円</span>
+        </div>
+        <div class="text-sm mt-2">
+            <a href="#" id="show-average-cost" class="text-blue-600 hover:underline">電気代が不明な場合はこちら</a>
+        </div>
+        <div id="average-cost-info" class="hidden warm-beige-bg p-2 rounded-lg text-sm mt-2">
+            <p><strong>ご参考(月平均):</strong> 2人世帯: 約10,000円, 4人世帯: 約13,000円</p>
+        </div>
+        <button data-action="submit-utility-cost" class="btn btn-primary mt-4">入力完了</button>
+    </div>
 </div>
 
-<!-- STEP 1.3 -->
 <div id="step-1.3" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <div class="text-8xl">😲</div>
-    <h2 class="text-3xl sm:text-5xl font-serif"><span id="bill-amount-text" class="highlight"></span>円！<br>よくお使いなんですね！</h2>
-    <button data-action="next-step" data-step="1.4" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <div class="text-8xl">😲</div>
+    <h2 class="text-3xl sm:text-5xl font-serif"><span id="bill-amount-text" class="highlight"></span>円！<br>よくお使いなんですね！</h2>
+    <button data-action="next-step" data-step="1.4" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 1.4 -->
 <div id="step-1.4" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">👨‍👩‍👧‍👦ご家族は何名様ですか？</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="familySize" data-value="1人" data-step="1.4a" class="btn btn-secondary">1人</button>
-        <button data-action="store-and-next" data-key="familySize" data-value="2人" data-step="1.4a" class="btn btn-secondary">2人</button>
-        <button data-action="store-and-next" data-key="familySize" data-value="3人" data-step="1.4a" class="btn btn-secondary">3人</button>
-        <button data-action="store-and-next" data-key="familySize" data-value="4人" data-step="1.4a" class="btn btn-secondary">4人</button>
-        <button data-action="store-and-next" data-key="familySize" data-value="5人" data-step="1.4a" class="btn btn-secondary">5人</button>
-        <button data-action="store-and-next" data-key="familySize" data-value="6人以上" data-step="1.4a" class="btn btn-secondary">6人以上</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">👨‍👩‍👧‍👦ご家族は何名様ですか？</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="familySize" data-value="1人" data-step="1.4a" class="btn btn-secondary">1人</button>
+        <button data-action="store-and-next" data-key="familySize" data-value="2人" data-step="1.4a" class="btn btn-secondary">2人</button>
+        <button data-action="store-and-next" data-key="familySize" data-value="3人" data-step="1.4a" class="btn btn-secondary">3人</button>
+        <button data-action="store-and-next" data-key="familySize" data-value="4人" data-step="1.4a" class="btn btn-secondary">4人</button>
+        <button data-action="store-and-next" data-key="familySize" data-value="5人" data-step="1.4a" class="btn btn-secondary">5人</button>
+        <button data-action="store-and-next" data-key="familySize" data-value="6人以上" data-step="1.4a" class="btn btn-secondary">6人以上</button>
+    </div>
 </div>
 
-<!-- STEP 1.4a -->
 <div id="step-1.4a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">ありがとうございます。<br>大人の方とお子様の人数を教えていただけますか？</h2>
-    <div class="flex flex-col items-center space-y-4 w-full px-4">
-        <div class="relative w-full max-w-sm"><input type="number" id="adult-count" class="input-field" placeholder="大人 (人)"></div>
-        <div class="relative w-full max-w-sm"><input type="number" id="child-count" class="input-field" placeholder="お子様 (人)"></div>
-        <button data-action="store-and-next" data-step="1.4a1" class="btn btn-primary mt-4">入力完了</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">ありがとうございます。<br>大人の方とお子様の人数を教えていただけますか？</h2>
+    <div class="flex flex-col items-center space-y-4 w-full px-4">
+        <div class="relative w-full max-w-sm"><input type="number" id="adult-count" class="input-field" placeholder="大人 (人)"></div>
+        <div class="relative w-full max-w-sm"><input type="number" id="child-count" class="input-field" placeholder="お子様 (人)"></div>
+        <button data-action="store-and-next" data-step="1.4a1" class="btn btn-primary mt-4">入力完了</button>
+    </div>
 </div>
 
-<!-- STEP 1.4a1 -->
 <div id="step-1.4a1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <div class="text-8xl">💡</div>
-    <h2 class="text-2xl sm:text-4xl font-serif">ご家族<span id="family-size-analysis" class="highlight"></span>で、月々<span id="cost-analysis" class="highlight"></span>円ですね。</h2>
-    <div class="warm-beige-bg p-6 rounded-xl text-left space-y-4 max-w-2xl mx-auto">
-        <p class="text-xl">AI分析で、平均的なご家庭より、光熱費が高いです。「隠れたコスト」があるかもしれません。</p>
-    </div>
-    <button data-action="next-step" data-step="1.4b" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <div class="text-8xl">💡</div>
+    <h2 class="text-2xl sm:text-4xl font-serif">ご家族<span id="family-size-analysis" class="highlight"></span>で、月々<span id="cost-analysis" class="highlight"></span>円ですね。</h2>
+    <div class="warm-beige-bg p-6 rounded-xl text-left space-y-4 max-w-2xl mx-auto">
+        <p class="text-xl">AI分析で、平均的なご家庭より、光熱費が高いです。「隠れたコスト」があるかもしれません。</p>
+    </div>
+    <button data-action="next-step" data-step="1.4b" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 1.4b -->
 <div id="step-1.4b" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">お客様の年代を教えてください。</h2>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="ageGroup" data-value="20代" data-step="1.6" class="btn btn-secondary">20代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="30代" data-step="1.6" class="btn btn-secondary">30代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="40代" data-step="1.6" class="btn btn-secondary">40代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="50代" data-step="1.6" class="btn btn-secondary">50代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="60代" data-step="1.6" class="btn btn-secondary">60代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="70代" data-step="1.6" class="btn btn-secondary">70代</button>
-        <button data-action="store-and-next" data-key="ageGroup" data-value="80代以上" data-step="1.6" class="btn btn-secondary">80代以上</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">お客様の年代を教えてください。<br><span class="text-lg">よりパーソナルな情報をご提供できます。</span></h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="ageGroup" data-value="20代" data-step="1.6" class="btn btn-secondary">20代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="30代" data-step="1.6" class="btn btn-secondary">30代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="40代" data-step="1.6" class="btn btn-secondary">40代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="50代" data-step="1.6" class="btn btn-secondary">50代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="60代" data-step="1.6" class="btn btn-secondary">60代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="70代" data-step="1.6" class="btn btn-secondary">70代</button>
+        <button data-action="store-and-next" data-key="ageGroup" data-value="80代以上" data-step="1.6" class="btn btn-secondary">80代以上</button>
+    </div>
 </div>
 
-<!-- STEP 1.6 -->
 <div id="step-1.6" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🔌設置されている設備について教えてください</h2>
-    <p class="text-gray-500">(複数選択できます)</p>
-    <div id="equipment-options" class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
-        <button data-action="toggle-select" data-value="太陽光発電" class="btn btn-secondary">太陽光発電</button>
-        <button data-action="toggle-select" data-value="蓄電池" class="btn btn-secondary">蓄電池</button>
-        <button data-action="toggle-select" data-value="エコキュート" class="btn btn-secondary">エコキュート</button>
-        <button data-action="toggle-select" data-value="エネファーム" class="btn btn-secondary">エネファーム</button>
-        <button data-action="toggle-select" data-value="電気自動車" class="btn btn-secondary">電気自動車</button>
-    </div>
-    <div class="pt-4">
-        <button data-action="process-equipment-and-next" data-step="1.7" class="btn btn-primary">次へ</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🔌設置されている設備について<br>教えてください</h2>
+    <p class="text-gray-500">(複数選択できます)</p>
+    <div id="equipment-options" class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+        <button data-action="toggle-select" data-value="太陽光発電" class="btn btn-secondary">太陽光発電</button>
+        <button data-action="toggle-select" data-value="蓄電池" class="btn btn-secondary">蓄電池</button>
+        <button data-action="toggle-select" data-value="エコキュート" class="btn btn-secondary">エコキュート</button>
+        <button data-action="toggle-select" data-value="エネファーム" class="btn btn-secondary">エネファーム</button>
+        <button data-action="toggle-select" data-value="電気自動車" class="btn btn-secondary">電気自動車</button>
+    </div>
+    <div class="pt-4">
+        <button data-action="process-equipment-and-next" data-step="1.7" class="btn btn-primary">次へ</button>
+    </div>
 </div>
 
-<!-- STEP 1.7 -->
 <div id="step-1.7" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">📝 ありがとうございます。<br>もし分かれば、詳細を教えてください</h2>
-    <div id="solar-details-section" class="hidden space-y-4 warm-beige-bg p-4 rounded-lg">
-        <h3 class="text-xl font-serif warm-pink">☀️ 太陽光発電</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input type="number" id="solar-year" class="input-field" placeholder="設置年数 (年)">
-            <input type="number" id="solar-price" class="input-field" placeholder="売電収入 (円)">
-            <div class="sm:col-span-2">
-                <p class="text-gray-500 mb-2">売電期間</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <button data-action="select-fit" data-key="solarFITPeriod" data-value="10年" class="btn btn-secondary">10年</button>
-                    <button data-action="select-fit" data-key="solarFITPeriod" data-value="20年" class="btn btn-secondary">20年</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="other-equip-details-section" class="space-y-4"></div>
-    <button data-action="store-equipment-details-and-next" data-step="2.1" class="btn btn-primary">入力完了</button>
+    <p class="text-lg text-gray-500">STEP 1：お客様のこと</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">📝 ありがとうございます。<br>もし分かれば、詳細を教えてください</h2>
+    <div id="solar-details-section" class="hidden space-y-4 warm-beige-bg p-4 rounded-lg">
+        <h3 class="text-xl font-serif warm-pink">☀️ 太陽光発電</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input type="number" id="solar-year" class="input-field" placeholder="設置年数 (年)">
+            <input type="number" id="solar-price" class="input-field" placeholder="売電収入 (円)">
+            <div class="sm:col-span-2">
+                <p class="text-gray-500 mb-2">売電期間</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button data-action="select-fit" data-key="solarFITPeriod" data-value="10年" class="btn btn-secondary">10年</button>
+                    <button data-action="select-fit" data-key="solarFITPeriod" data-value="20年" class="btn btn-secondary">20年</button>
+                </div>
+            </div>
+            <input type="text" id="solar-manufacturer" class="input-field hidden" placeholder="メーカー">
+            <input type="number" id="solar-capacity" class="input-field hidden" placeholder="システム容量 (kW)">
+        </div>
+    </div>
+    <div id="other-equip-details-section" class="space-y-4"></div>
+    <button data-action="store-equipment-details-and-next" data-step="2.1" class="btn btn-primary">入力完了</button>
 </div>
 
-<!-- STEP 2.1 -->
 <div id="step-2.1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif leading-relaxed">🎯 実は本日、<br>毎月の光熱費が<span id="bill-threshold-text" class="highlight"></span>円以上の方だけに<br>特別なご案内をしています。</h2>
-    <button data-action="next-step" data-step="2.1a" class="btn btn-primary">詳しく聞く</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif leading-relaxed">🎯 実は本日、<br>毎月の光熱費が<span id="bill-threshold-text" class="highlight"></span>円以上の方だけに<br>特別なご案内をしています。</h2>
+    <button data-action="next-step" data-step="2.1a" class="btn btn-primary">詳しく聞く</button>
 </div>
 
-<!-- STEP 2.1a -->
 <div id="step-2.1a" class="step-screen text-center space-y-6 hidden relative">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">✨今回負担なく<span class="highlight">スマートハウス</span>にできる<br><span class="highlight">施工例様</span>を探しています</h2>
-    <button data-action="next-step" data-step="2.2" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">✨今回負担なく<span class="highlight">スマートハウス</span>にできる<br><span class="highlight">施工例様</span>を探しています</h2>
+    <button data-action="next-step" data-step="2.2" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 2.2 -->
 <div id="step-2.2" class="step-screen text-center space-y-6 hidden relative">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🤔 ところで、「スマートハウス」<br>ってご存知ですか？</h2>
-    <button data-action="next-step" data-step="2.2a" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🤔 ところで、「スマートハウス」<br>ってご存知ですか？</h2>
+    <button data-action="next-step" data-step="2.2a" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 2.2a ★HERO: 気づき（1画面完結型） -->
-<div id="step-2.2a" class="step-screen hidden relative" style="background:#FFFBF7;">
-    <div class="hero-wrap">
-        <p class="hero-label">STEP 2：特別なご提案</p>
-
-        <!-- アイコン -->
-        <div class="flex items-center justify-center gap-6 mb-1">
-            <div class="text-center"><span class="text-5xl">☀️</span><p class="text-sm font-bold mt-1" style="color:#374151;">太陽光発電</p></div>
-            <span class="text-2xl" style="color:#D1D5DB;">+</span>
-            <div class="text-center"><span class="text-5xl">🔋</span><p class="text-sm font-bold mt-1" style="color:#374151;">蓄電池</p></div>
-        </div>
-
-        <!-- ②中央HERO：最も強い一文 -->
-        <h2 class="hero-main-text">
-            結果、<span class="hero-accent">光熱費0円の暮らし</span><br>を目指せます。
-        </h2>
-
-        <!-- ③共感・説明 -->
-        <p class="hero-sub">
-            この２つの設備で電気を<strong style="color:#111827;">「創って」「ためて」「賢く使う」</strong>お家のこと。
-        </p>
-
-        <!-- 動画 -->
-        <iframe src="https://drive.google.com/file/d/1kypRmc2fKOCVYNnqSR_6MBY3pvOiLA92/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-md mx-auto aspect-video border-0 my-4"></iframe>
-
-        <!-- ④下部補足（step-2.3の内容を統合） -->
-        <p class="hero-detail-text mb-5">
-            📈 国は今後、新築義務化を目指しており<br>最近はすでに建てられているおうちにも一気に広がっています。
-        </p>
-
-        <!-- ⑤ボタン -->
-        <button data-action="next-step" data-step="2.4" class="btn btn-primary">次へ</button>
-    </div>
-    <button data-action="next-step" data-step="2.2_detour" class="absolute bottom-20 right-4 text-3xl opacity-30 hover:opacity-100 transition-opacity">👉</button>
+<div id="step-2.2a" class="step-screen text-center space-y-6 hidden relative">
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <div class="p-6 warm-beige-bg rounded-xl my-4 space-y-6">
+        <div class="flex justify-center items-center space-x-4 sm:space-x-8 pt-4">
+            <div class="text-center">
+                <div class="text-5xl">☀️</div>
+                <p class="font-bold mt-1 text-lg">太陽光発電</p>
+            </div>
+            <div class="text-4xl text-gray-400">+</div>
+            <div class="text-center">
+                <div class="text-5xl">🔋</div>
+                <p class="font-bold mt-1 text-lg">蓄電池</p>
+            </div>
+        </div>
+        <iframe src="https://drive.google.com/file/d/1kypRmc2fKOCVYNnqSR_6MBY3pvOiLA92/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-md mx-auto mb-4 aspect-video border-0"></iframe>
+        <p class="text-xl text-center pt-4">この２つの設備で電気を<strong class="warm-pink">「創って」「ためて」「賢く使う」</strong>お家のこと。</p>
+        <p class="text-2xl font-bold">結果、<span class="warm-pink">光熱費0円の暮らし</span>を目指せます。</p>
+    </div>
+    <button data-action="next-step" data-step="2.3" class="btn btn-primary">次へ</button>
+    <button data-action="next-step" data-step="2.2_detour" class="absolute bottom-4 right-4 text-3xl opacity-30 hover:opacity-100 transition-opacity">👉</button>
 </div>
 
 <div id="step-2.2_detour" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <div class="warm-beige-bg p-6 rounded-xl">
-        <p class="text-2xl sm:text-3xl font-serif">ちょうどよかったです。<br>実は今、そういった意識をお持ちの方だけに特別なご案内をしています。</p>
-    </div>
-    <button data-action="next-step" data-step="2.3" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <div class="warm-beige-bg p-6 rounded-xl">
+        <p class="text-2xl sm:text-3xl font-serif">ちょうどよかったです。<br>実は今、そういった意識をお持ちの方だけに<br>特別なご案内をしています。</p>
+    </div>
+    <button data-action="next-step" data-step="2.3" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 2.3 -->
 <div id="step-2.3" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-3xl sm:text-5xl font-serif">📈 国は今後、新築義務化を目指しており<br>最近はすでに建てられているおうちにも一気に広がっています。</h2>
-    <button data-action="next-step" data-step="2.4" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-3xl sm:text-5xl font-serif">📈 国は今後、<br>新築義務化を目指しており<br>最近はすでに建てられているおうちにも一気に広がっています。</h2>
+    <button data-action="next-step" data-step="2.4" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 2.4 -->
 <div id="step-2.4" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-3xl sm:text-5xl font-serif">💸 なぜなら10年以上<br>光熱費が値上がり続いているからなんです。</h2>
-    <p class="text-xl sm:text-2xl">これから先も、電気代は上がり続けると言われています。</p>
-    <iframe src="https://drive.google.com/file/d/1gFZOnuFyWIdr-fO5wOkTRM3926xj8Ifq/preview" allow="autoplay" class="mx-auto w-full max-w-xl aspect-video rounded-lg shadow-lg border-0"></iframe>
-    <button data-action="next-step" data-step="2.4a" class="btn btn-primary">このままだと、どうなるの？</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-3xl sm:text-5xl font-serif">💸 なぜなら10年以上<br>光熱費が値上がり続いているからなんです。</h2>
+    <p class="text-xl sm:text-2xl">これから先も、電気代は<br>上がり続けると言われています。</p>
+    <iframe src="https://drive.google.com/file/d/1gFZOnuFyWIdr-fO5wOkTRM3926xj8Ifq/preview" allow="autoplay" class="mx-auto w-full max-w-xl aspect-video rounded-lg shadow-lg border-0"></iframe>
+    <button data-action="next-step" data-step="2.4a" class="btn btn-primary">このままだと、どうなるの？</button>
 </div>
 
-<!-- STEP 2.4a ★HERO: 危機（1画面完結型） -->
-<div id="step-2.4a" class="step-screen hidden" style="background:#FFFBF7;">
-    <div class="hero-wrap">
-        <p class="hero-label">STEP 2：特別なご提案</p>
-
-        <!-- ①フック -->
-        <h2 class="font-serif font-bold mb-2" style="font-size:clamp(1.15rem,3.5vw,1.5rem); color:#374151; text-align:center;">
-            毎月の電気代、<br>実はこんなに支払っています。
-        </h2>
-
-        <!-- ②中央HERO：30年総額（最大サイズ数字） -->
-        <div class="hero-card hero-card-amber my-3">
-            <p style="font-size:0.85rem; color:#92400E;" class="mb-1">
-                もし、このまま<strong>毎年5%</strong>ずつ値上がりすると お客様のご家庭では…
-            </p>
-            <p style="font-size:0.8rem; color:#78716C;">今後30年間で支払う光熱費の総額は</p>
-            <p class="hero-number my-1" id="future-cost-text">〇〇〇万円</p>
-            <p style="font-size:0.95rem; color:#92400E;">にもなってしまうかもしれません。</p>
-        </div>
-
-        <!-- ③計算カード -->
-        <div class="hero-card-gray w-full max-w-md mx-auto mb-3">
-            <p class="hero-calc-row"><span class="hero-calc-label">例えば月々</span><strong class="hero-calc-num" id="current-bill-example">15,000</strong><span class="hero-calc-label">円だと…</span></p>
-            <p class="hero-calc-row hero-calc-big">1年間で <strong class="hero-calc-num" id="annual-cost">180,000</strong> 円</p>
-            <p class="hero-calc-row" style="font-size:1.4rem; font-weight:800; color:#111827;">10年間で <strong class="hero-calc-num" id="decade-cost">1,800,000</strong> 円</p>
-            <p style="font-size:0.8rem; color:#6B7280; border-top:1px solid #E5E7EB; padding-top:0.5rem; margin-top:0.5rem;">
-                さらに、電気代は今後も上がり続けると言われてまして、<strong class="hero-accent">今後も毎年５％以上</strong>上がっていくと言われています。
-            </p>
-        </div>
-
-        <!-- ④共感 -->
-        <p class="hero-detail-text mb-5">
-            まるで気づかないうちに、大きなお金が財布から出ていっているのと同じなんです。
-        </p>
-
-        <!-- ⑤ボタン -->
-        <button data-action="next-step" data-step="3.1" class="btn btn-primary">STEP 3：未来を変えるご提案</button>
-    </div>
+<div id="step-2.4a" class="step-screen text-center space-y-6 hidden">
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">毎月の電気代、<br>実はこんなに支払っています。</h2>
+    <div class="warm-beige-bg p-6 rounded-xl text-left space-y-4">
+        <p class="text-lg">例えば月々<strong class="warm-pink" id="current-bill-example">15,000</strong>円だと…</p>
+        <p class="text-2xl">1年間で <strong class="warm-pink" id="annual-cost">180,000</strong> 円</p>
+        <p class="text-3xl">10年間で <strong class="warm-pink" id="decade-cost">1,800,000</strong> 円</p>
+        <p class="text-lg mt-4">まるで気づかないうちに、大きなお金が財布から出ていっているのと同じなんです。</p>
+        <p class="text-lg mt-4 pt-4 border-t border-pink-200">
+            さらに、先ほどもお話しましたように、電気代は今後も上がり続けると言われてまして、最近の物価高もあいまって、
+            <strong class="warm-pink">今後も毎年５％以上</strong>上がっていくと言われています。
+        </p>
+    </div>
+    <button data-action="next-step" data-step="2.5" class="btn btn-primary">さらに30年後には…</button>
 </div>
 
-<!-- STEP 2.5 -->
 <div id="step-2.5" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">😱 もし、このまま<span class="highlight">毎年5%</span>ずつ値上がりすると<br>お客様のご家庭では...</h2>
-    <div class="my-6 p-6 bg-red-500/10 border-2 border-red-300 rounded-xl">
-        <p class="text-lg sm:text-xl">今後30年間で支払う光熱費の総額は</p>
-        <p class="text-4xl sm:text-6xl font-bold warm-pink" id="future-cost-text-legacy">〇〇〇万円</p>
-        <p class="text-lg sm:text-xl mt-2">にもなってしまうかもしれません。</p>
-    </div>
-    <button data-action="next-step" data-step="3.1" class="btn btn-primary">STEP 3：未来を変えるご提案</button>
+    <p class="text-lg text-gray-500">STEP 2：特別なご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">😱 もし、このまま<span class="highlight">毎年5%</span>ずつ値上がりすると<br>お客様のご家庭では...</h2>
+    <div class="my-6 p-6 bg-red-500/10 border-2 border-red-300 rounded-xl">
+        <p class="text-lg sm:text-xl">今後30年間で支払う光熱費の総額は</p>
+        <p class="text-4xl sm:text-6xl font-bold warm-pink" id="future-cost-text">〇〇〇万円</p>
+        <p class="text-lg sm:text-xl mt-2">にもなってしまうかもしれません。</p>
+    </div>
+    <button data-action="next-step" data-step="3.1" class="btn btn-primary">STEP 3：未来を変えるご提案</button>
 </div>
 
-<!-- STEP 3.1 -->
 <div id="step-3.1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">💬「そんなに払うなんて考えたこともなかった…」</h2>
-    <div class="warm-beige-bg p-6 rounded-xl"><p class="mt-4 text-lg">多くのお客様が、そうおっしゃいます。</p></div>
-    <button data-action="next-step" data-step="3.1_video" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">💬「そんなに払うなんて<br>考えたこともなかった…」</h2>
+    <div class="warm-beige-bg p-6 rounded-xl">
+        <p class="mt-4 text-lg">多くのお客様が、そうおっしゃいます。</p>
+    </div>
+    <button data-action="next-step" data-step="3.1_video" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.1_video" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">そこでスマートハウスにして光熱費を払わないという選択をするお家が増えています。</h2>
-    <div class="p-6 warm-beige-bg rounded-xl my-4">
-        <iframe src="https://drive.google.com/file/d/1h7FjPP4wOtT8vumoUi30yiS4qv1A3ivw/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-xl mx-auto aspect-video border-0"></iframe>
-    </div>
-    <button data-action="next-step" data-step="3.1a" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">そこでスマートハウスにして光熱費を払わないという選択をするお家が増えています。</h2>
+    <div class="p-6 warm-beige-bg rounded-xl my-4">
+        <iframe src="https://drive.google.com/file/d/1h7FjPP4wOtT8vumoUi30yiS4qv1A3ivw/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-xl mx-auto aspect-video border-0"></iframe>
+    </div>
+    <button data-action="next-step" data-step="3.1a" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.1a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">💡 ただ負担がでたら意味がないじゃないですか？</h2>
-    <button data-action="next-step" data-step="3.1b" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">💡 ただ負担がでたら意味がないじゃないですか？</h2>
+    <button data-action="next-step" data-step="3.1b" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.1b" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif leading-relaxed">だからこそ私たちは、<br>「ご負担なく、スマートハウスにできる施工例様」を探しています。</h2>
-    <button data-action="next-step" data-step="3.2" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif leading-relaxed">だからこそ私たちは、<br>「ご負担なく、スマートハウスにできる施工例様」を探しています。</h2>
+    <button data-action="next-step" data-step="3.2" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 3.2 -->
 <div id="step-3.2" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">光熱費の心配がなくなるだけでなく、<br>もう一つ、スマートハウスにすることで嬉しいポイントがあるんです。</h2>
-    <div class="pt-4"><button data-action="next-step" data-step="3.2a" class="btn btn-primary">なにかというと</button></div>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">光熱費の心配がなくなるだけでなく、<br>もう一つ、スマートハウスにすることで<br>嬉しいポイントがあるんです。</h2>
+    <div class="pt-4"><button data-action="next-step" data-step="3.2a" class="btn btn-primary">なにかというと</button></div>
 </div>
 
-<!-- STEP 3.2a -->
 <div id="step-3.2a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">それは、停電の対策になることです。</h2>
-    <p class="text-xl">もし停電した時、1番心配なことは何ですか？</p>
-    <div class="grid grid-cols-2 gap-4 pt-4">
-        <button data-action="select-reason" data-reason="確かに、スマホが使えないと連絡も取れず、情報収集もできなくなってしまいますよね。" class="btn btn-secondary">スマホ充電</button>
-        <button data-action="select-reason" data-reason="中身のものが全て腐ってしまって、大事な食品がダメになってしまいますよね。" class="btn btn-secondary">冷蔵庫</button>
-        <button data-action="select-reason" data-reason="夜になると真っ暗で不安ですし、テレビからの情報も得られなくなってしまいます。" class="btn btn-secondary">照明・TV</button>
-        <button data-action="select-reason" data-reason="夏や冬だと、エアコンが使えないのは命に関わる問題にもなりますよね。" class="btn btn-secondary">エアコン</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">それは、停電の対策になることです。</h2>
+    <p class="text-xl">もし停電した時、1番心配なことは何ですか？</p>
+    <div class="grid grid-cols-2 gap-4 pt-4">
+        <button data-action="select-reason" data-reason="確かに、スマホが使えないと連絡も取れず、情報収集もできなくなってしまいますよね。" class="btn btn-secondary">スマホ充電</button>
+        <button data-action="select-reason" data-reason="中身のものが全て腐ってしまって、大事な食品がダメになってしまいますよね。" class="btn btn-secondary">冷蔵庫</button>
+        <button data-action="select-reason" data-reason="夜になると真っ暗で不安ですし、テレビからの情報も得られなくなってしまいます。" class="btn btn-secondary">照明・TV</button>
+        <button data-action="select-reason" data-reason="夏や冬だと、エアコンが使えないのは命に関わる問題にもなりますよね。" class="btn btn-secondary">エアコン</button>
+    </div>
 </div>
 
-<!-- STEP 3.3 -->
 <div id="step-3.3" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-3xl sm:text-5xl font-serif">本当に、そうですよね。<br>よく分かっていらっしゃる！</h2>
-    <p id="reason-text" class="text-xl mt-4 warm-beige-bg p-4 rounded-lg"></p>
-    <div class="mt-4">
-        <iframe src="https://drive.google.com/file/d/1hetc4-1pWDmFDHJfv9TICXXl1HAbVs1L/preview" width="640" height="480" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-lg mx-auto aspect-video border-0"></iframe>
-    </div>
-    <button data-action="next-step" data-step="3.3a" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-3xl sm:text-5xl font-serif">本当に、そうですよね。<br>よく分かっていらっしゃる！</h2>
+    <p id="reason-text" class="text-xl mt-4 warm-beige-bg p-4 rounded-lg"></p>
+    <div class="mt-4">
+        <iframe src="https://drive.google.com/file/d/1hetc4-1pWDmFDHJfv9TICXXl1HAbVs1L/preview" width="640" height="480" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-lg mx-auto aspect-video border-0"></iframe>
+    </div>
+    <button data-action="next-step" data-step="3.3a" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.3a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">📱 災害時や停電時には、<br>「備えていてよかった」という声で溢れます</h2>
-    <iframe src="https://drive.google.com/file/d/1x_uftWV_an8dFwWR3xnN2799IpGqgdnv/preview" allow="autoplay" class="mx-auto w-full max-w-xl aspect-video rounded-lg shadow-lg border-0 mt-4"></iframe>
-    <p class="mt-4">その時、あなたの家だけは「いつもの明るい日常」が続きます。</p>
-    <button data-action="next-step" data-step="3.4" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">📱 災害時や停電時には、<br>「備えていてよかった」という声で溢れます</h2>
+    <iframe src="https://drive.google.com/file/d/1x_uftWV_an8dFwWR3xnN2799IpGqgdnv/preview" allow="autoplay" class="mx-auto w-full max-w-xl aspect-video rounded-lg shadow-lg border-0 mt-4"></iframe>
+    <p class="mt-4">その時、あなたの家だけは「いつもの明るい日常」が続きます。</p>
+    <button data-action="next-step" data-step="3.4" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.4" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-3xl sm:text-5xl font-serif leading-relaxed">「良いのはわかるけど、高いんでしょ？」<br>と言われる方が多かったんです。</h2>
-    <button data-action="next-step" data-step="3.5" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-3xl sm:text-5xl font-serif leading-relaxed">「良いのはわかるけど、高いんでしょ？」<br>と言われる方が多かったんです。</h2>
+    <button data-action="next-step" data-step="3.5" class="btn btn-primary">次へ</button>
 </div>
 
 <div id="step-3.5" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">✨ そこで今回、<span class="highlight">ご負担なく設置できる</span><br>施工例様をこの地域で探しています。</h2>
-    <button data-action="next-step" data-step="3.1c" class="btn btn-primary">なるほど！</button>
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">✨ そこで今回、<span class="highlight">ご負担なく設置できる</span><br>施工例様をこの地域で探しています。</h2>
+    <button data-action="next-step" data-step="3.1c" class="btn btn-primary">なるほど！</button>
 </div>
 
-<!-- STEP 3.1c ★HERO: 解決（1画面完結型） -->
-<div id="step-3.1c" class="step-screen hidden" style="background:#FFFBF7;">
-    <div class="hero-wrap">
-        <p class="hero-label">STEP 3：未来を変えるご提案</p>
-
-        <!-- ②中央HERO -->
-        <h2 class="hero-main-text my-3">
-            <span class="hero-accent">「負担ゼロ」</span>で叶える、<br>夢の0円生活。
-        </h2>
-
-        <!-- ③説明 -->
-        <p class="hero-sub mb-3">
-            今も毎月光熱費を払っている上に<strong class="hero-accent">今後も値上がりは続く</strong>ので家庭の負担は増えていきます。
-        </p>
-
-        <!-- 動画 -->
-        <iframe src="https://drive.google.com/file/d/15DaUS2VYsWrSvCFEJZc42_yWekK87ozY/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-lg mx-auto aspect-video border-0 my-3"></iframe>
-
-        <!-- ソリューション -->
-        <p style="font-size:clamp(1.1rem,3.5vw,1.35rem); font-weight:700; color:#111827; text-align:center; max-width:28rem; margin:0.5rem auto;">
-            スマートハウスにすると、<strong class="hero-accent">光熱費ほぼ払わずに済みます。</strong>
-        </p>
-
-        <!-- 証言カード（step-3.1dの内容を統合） -->
-        <div class="hero-card-quote w-full max-w-lg mx-auto my-4">
-            <p style="font-size:0.85rem; color:#4B5563; line-height:1.7;">
-                💬 このお話を聞かれた多くの方が<br>「この先も光熱費払っていかないといけないし値上げもしていくなら、負担なくできるのであれば嬉しい」とおっしゃられていました。
-            </p>
-        </div>
-
-        <!-- ⑤ボタン -->
-        <button data-action="next-step" data-step="4.1" class="btn btn-primary">次へ</button>
-    </div>
+<div id="step-3.1c" class="step-screen text-center space-y-6 hidden">
+    <p class="text-lg text-gray-500">STEP 3：未来を変えるご提案</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">「負担ゼロ」で叶える、夢の0円生活。</h2>
+    <div class="warm-beige-bg p-6 rounded-xl">
+        <p class="text-lg">今も毎月光熱費を払っている上に<strong class="warm-pink">今後も値上がりは続く</strong>ので家庭の負担は増えていきます。</p>
+        <div class="mt-6">
+            <iframe src="https://drive.google.com/file/d/15DaUS2VYsWrSvCFEJZc42_yWekK87ozY/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-lg mx-auto aspect-video border-0"></iframe>
+        </div>
+        <p class="text-lg mt-6">スマートハウスにすると、<strong class="warm-pink">光熱費ほぼ払わずに済みます。</strong></p>
+    </div>
+    <button data-action="next-step" data-step="3.1d" class="btn btn-primary mt-4">次へ</button>
 </div>
 
-<!-- STEP 3.1d -->
 <div id="step-3.1d" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">💬 このお話を聞かれた多くの方が</h2>
-    <div class="warm-beige-bg p-6 rounded-xl">
-        <p class="text-xl">「この先も光熱費払っていかないといけないし値上げもしていくなら、負担なくできるのであれば嬉しい」とおっしゃられていました。</p>
-    </div>
-    <button data-action="next-step" data-step="4.1" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">💬 このお話を聞かれた多くの方が</h2>
+    <div class="warm-beige-bg p-6 rounded-xl">
+        <p class="text-xl">「この先も光熱費払っていかないといけないし値上げもしていくなら、負担なくできるのであれば嬉しい」とおっしゃられていました。</p>
+    </div>
+    <button data-action="next-step" data-step="4.1" class="btn btn-primary mt-4">次へ</button>
 </div>
 
-<!-- STEP 4.1 -->
 <div id="step-4.1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">😊 もし<span class="highlight">負担なく</span>スマートハウスにできて、<br>光熱費が<span class="highlight">大幅に</span>下がったら…<br>嬉しくないですか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="next-step" data-step="4.2a" class="btn btn-primary">嬉しい！</button>
-        <button data-action="next-step" data-step="4.1a" class="btn btn-secondary">そうでもない…</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">😊 もし<span class="highlight">負担なく</span>スマートハウスにできて、<br>光熱費が<span class="highlight">大幅に</span>下がったら…<br>嬉しくないですか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="next-step" data-step="4.2a" class="btn btn-primary">嬉しい！</button>
+        <button data-action="next-step" data-step="4.1a" class="btn btn-secondary">そうでもない…</button>
+    </div>
 </div>
 
 <div id="step-4.1a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🤔 ちなみに、光熱費は高い方がお好きですか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="next-step" data-step="1.1_ank" class="btn btn-secondary">高い方がいい</button>
-        <button data-action="next-step" data-step="4.2a" class="btn btn-primary">安い方がいい</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🤔 ちなみに、光熱費は<br>高い方がお好きですか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="next-step" data-step="1.1_ank" class="btn btn-secondary">高い方がいい</button>
+        <button data-action="next-step" data-step="4.2a" class="btn btn-primary">安い方がいい</button>
+    </div>
 </div>
 
 <div id="step-4.2a" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🏠 ですよね！<br>ただ、ご負担なく実現できるかは<br>お家の状況によって大きく変わります。</h2>
-    <button data-action="next-step" data-step="4.2a1" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🏠 ですよね！<br>ただ、ご負担なく実現できるかは<br>お家の状況によって大きく変わります。</h2>
+    <button data-action="next-step" data-step="4.2a1" class="btn btn-primary mt-4">次へ</button>
 </div>
 
 <div id="step-4.2a1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🏠 お家の状況とは…</h2>
-    <div class="warm-beige-bg p-6 rounded-xl">
-        <p class="text-xl">屋根の向きや角度、光熱費の使ってる量や時間帯によってかわり、お家によって合う合わないがあります。</p>
-    </div>
-    <button data-action="next-step" data-step="4.2b" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🏠 お家の状況とは…</h2>
+    <div class="warm-beige-bg p-6 rounded-xl">
+        <p class="text-xl">屋根の向きや角度、光熱費の使ってる量や時間帯によってかわり、お家によって合う合わないがあります。</p>
+    </div>
+    <button data-action="next-step" data-step="4.2b" class="btn btn-primary mt-4">次へ</button>
 </div>
 
-<!-- STEP 4.2b -->
 <div id="step-4.2b" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🎉 そこで今回、<span class="dynamic-city-name">[あなたの街]</span>棟数限定で<br>WEBのオンライン診断を<br><span class="highlight">無料で実施中</span>です。</h2>
-    <div class="w-full p-4">
-        <h3 class="font-serif text-xl mb-2">【実際のお客様の施工事例】</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div class="warm-beige-bg rounded-lg p-2 shadow">
-                <iframe src="https://drive.google.com/file/d/1cK7ADUhAgCMp0O56Hj8esrtaRkpL2kgf/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
-                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] T様邸</p>
-            </div>
-            <div class="warm-beige-bg rounded-lg p-2 shadow">
-                <iframe src="https://drive.google.com/file/d/13B_wm7Eu2PyN4M2loAr1ioagaAmuBc8A/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
-                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] K様邸</p>
-            </div>
-            <div class="warm-beige-bg rounded-lg p-2 shadow">
-                <iframe src="https://drive.google.com/file/d/1NlIsdQTjIyg8hTg8dBWb_gyp8dtdmBaX/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
-                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] O様邸</p>
-            </div>
-        </div>
-    </div>
-    <button data-action="next-step" data-step="4.2c" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🎉 そこで今回、<span class="dynamic-city-name">[あなたの街]</span>棟数限定で<br>WEBのオンライン診断を<br><span class="highlight">無料で実施中</span>です。</h2>
+    <div class="w-full p-4">
+        <h3 class="font-serif text-xl mb-2">【実際のお客様の施工事例】</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div class="warm-beige-bg rounded-lg p-2 shadow">
+                <iframe src="https://drive.google.com/file/d/1cK7ADUhAgCMp0O56Hj8esrtaRkpL2kgf/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
+                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] T様邸</p>
+            </div>
+            <div class="warm-beige-bg rounded-lg p-2 shadow">
+                <iframe src="https://drive.google.com/file/d/13B_wm7Eu2PyN4M2loAr1ioagaAmuBc8A/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
+                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] K様邸</p>
+            </div>
+            <div class="warm-beige-bg rounded-lg p-2 shadow">
+                <iframe src="https://drive.google.com/file/d/1NlIsdQTjIyg8hTg8dBWb_gyp8dtdmBaX/preview" class="w-full aspect-video rounded-md" allow="autoplay"></iframe>
+                <p class="text-sm mt-1 dynamic-city-example">[あなたの街] O様邸</p>
+            </div>
+        </div>
+    </div>
+    <button data-action="next-step" data-step="4.2c" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 4.2c -->
 <div id="step-4.2c" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">💬 まずは設置できるかどうかというのも<br>わからないので、WEBのオンラインで簡単に<br>30分程度お話させて頂いております</h2>
-    <iframe src="https://drive.google.com/file/d/1q90DJyhu9Uq0j_FalIefOFowpIWxDQn3/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-md mx-auto mb-4 aspect-video border-0"></iframe>
-    <button data-action="next-step" data-step="4.3" class="btn btn-primary">次へ</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">💬 まずは設置できるかどうかというのも<br>わからないので<br>WEBのオンラインで簡単に今回の概要について<br>30分程度お話させて頂いておりまして</h2>
+    <iframe src="https://drive.google.com/file/d/1q90DJyhu9Uq0j_FalIefOFowpIWxDQn3/preview" allow="autoplay" class="rounded-xl shadow-lg w-full max-w-md mx-auto mb-4 aspect-video border-0"></iframe>
+    <button data-action="next-step" data-step="4.3" class="btn btn-primary">次へ</button>
 </div>
 
-<!-- STEP 4.3 -->
 <div id="step-4.3" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">📊 生涯光熱費は</h2>
-    <p class="text-4xl sm:text-6xl font-bold warm-pink" id="future-cost-text-2">〇〇〇万円以上</p>
-    <p class="text-lg sm:text-xl mt-2">まだ光熱費を払い続けますか？<br>30分程度の簡単な無料診断で、ぜひ確認していただければと思います。</p>
-    <button data-action="next-step" data-step="4.4" class="btn btn-primary">無料診断を予約する</button>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">📊 生涯光熱費は</h2>
+    <p class="text-4xl sm:text-6xl font-bold warm-pink" id="future-cost-text-2">〇〇〇万円以上</p>
+    <p class="text-lg sm:text-xl mt-2">まだ光熱費を払い続けますか？<br> 30分程度の簡単な無料診断で、施工例に当てはまるかどうかお客様にとってスマートハウスが必要かどうか、ぜひ確認していただければと思います。</p>
+    <button data-action="next-step" data-step="4.4" class="btn btn-primary mt-4">無料診断を予約する</button>
 </div>
 
-<!-- STEP 4.4 -->
 <div id="step-4.4" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">📅 もし、そういったお話をゆっくり聞けるとしたら、<br>平日と土日どちらがよろしいですか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="appointmentDayType" data-value="平日" data-step="4.5" class="btn btn-primary">平日</button>
-        <button data-action="store-and-next" data-key="appointmentDayType" data-value="土日" data-step="4.5" class="btn btn-secondary">土日</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">📅 もし、そういったお話を<br>ゆっくり聞けるとしたら、<br>平日と土日どちらがよろしいですか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="appointmentDayType" data-value="平日" data-step="4.5" class="btn btn-primary">平日</button>
+        <button data-action="store-and-next" data-key="appointmentDayType" data-value="土日" data-step="4.5" class="btn btn-secondary">土日</button>
+    </div>
 </div>
 
-<!-- STEP 4.5 -->
 <div id="step-4.5" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">🕒 ありがとうございます。<br>お時間帯は、午前と午後どちらがよろしいですか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="appointmentTimeOfDay" data-value="午前" data-step="4.6_am" class="btn btn-primary">午前</button>
-        <button data-action="store-and-next" data-key="appointmentTimeOfDay" data-value="午後" data-step="4.6_pm" class="btn btn-secondary">午後</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">🕒 ありがとうございます。<br>お時間帯は、<br>午前と午後どちらがよろしいですか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="appointmentTimeOfDay" data-value="午前" data-step="4.6_am" class="btn btn-primary">午前</button>
+        <button data-action="store-and-next" data-key="appointmentTimeOfDay" data-value="午後" data-step="4.6_pm" class="btn btn-secondary">午後</button>
+    </div>
 </div>
 
-<!-- STEP 4.6_am -->
 <div id="step-4.6_am" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">✍️ 午前中ですね。<br>ご希望の時間帯はございますか？</h2>
-    <div class="time-selection-grid grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
-        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">9:00</button>
-        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">11:30</button>
-        <button data-action="select-time-other" data-controls="other-time-am-input" class="btn btn-secondary">その他</button>
-    </div>
-    <div id="other-time-am-input" class="hidden w-full max-w-sm mx-auto pt-4 space-y-4">
-        <input id="other-time-am-text" type="text" class="input-field text-lg" placeholder="希望時間を入力">
-        <button data-action="store-other-time-and-next" data-target="other-time-am-text" data-step="5.2" class="btn btn-primary">決定</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">✍️ 午前中ですね。<br>ご希望の時間帯はございますか？</h2>
+    <div class="time-selection-grid grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">9:00</button>
+        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">11:30</button>
+        <button data-action="select-time-other" data-controls="other-time-am-input" class="btn btn-secondary">その他</button>
+    </div>
+    <div id="other-time-am-input" class="hidden w-full max-w-sm mx-auto pt-4 space-y-4">
+        <input id="other-time-am-text" type="text" class="input-field text-lg" placeholder="希望時間を入力">
+        <button data-action="store-other-time-and-next" data-target="other-time-am-text" data-step="5.2" class="btn btn-primary">決定</button>
+    </div>
 </div>
 
-<!-- STEP 4.6_pm -->
 <div id="step-4.6_pm" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">✍️ 午後ですね。<br>ご希望の時間帯はございますか？</h2>
-    <div class="time-selection-grid grid grid-cols-2 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">14:30</button>
-        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">17:00</button>
-        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">19:00</button>
-        <button data-action="select-time-other" data-controls="other-time-pm-input" class="btn btn-secondary">その他</button>
-    </div>
-    <div id="other-time-pm-input" class="hidden w-full max-w-sm mx-auto pt-4 space-y-4">
-        <input id="other-time-pm-text" type="text" class="input-field text-lg" placeholder="希望時間を入力">
-        <button data-action="store-other-time-and-next" data-target="other-time-pm-text" data-step="5.2" class="btn btn-primary">決定</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 4：無料診断のご案内</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">✍️ 午後ですね。<br>ご希望の時間帯はございますか？</h2>
+    <div class="time-selection-grid grid grid-cols-2 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">14:30</button>
+        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">17:00</button>
+        <button data-action="select-time" data-step="5.2" class="btn btn-secondary">19:00</button>
+        <button data-action="select-time-other" data-controls="other-time-pm-input" class="btn btn-secondary">その他</button>
+    </div>
+    <div id="other-time-pm-input" class="hidden w-full max-w-sm mx-auto pt-4 space-y-4">
+        <input id="other-time-pm-text" type="text" class="input-field text-lg" placeholder="希望時間を入力">
+        <button data-action="store-other-time-and-next" data-target="other-time-pm-text" data-step="5.2" class="btn btn-primary">決定</button>
+    </div>
 </div>
 
-<!-- STEP 5.1 -->
 <div id="step-5.1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 5：最終確認</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">📞 ありがとうございます！<br>最後に、お名前などをご記入いただけますか？</h2>
-    <div class="flex flex-col items-center space-y-4 w-full px-4">
-        <div class="relative w-full max-w-sm"><input id="customer-name" type="text" class="input-field text-lg" placeholder="お名前"></div>
-        <div class="relative w-full max-w-sm"><input id="customer-address" type="text" class="input-field text-lg" placeholder="ご住所"></div>
-        <div class="relative w-full max-w-sm"><input id="customer-tel" type="tel" class="input-field text-lg" placeholder="ご連絡先"></div>
-        <button data-action="store-customer-info-and-next" data-step="5.2" class="btn btn-primary">記入完了</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 5：最終確認</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">📞 ありがとうございます！<br>最後に、お名前などを<br>ご記入いただけますか？</h2>
+    <div class="flex flex-col items-center space-y-4 w-full px-4 mt-4">
+        <div class="relative w-full max-w-sm"><input id="customer-name" type="text" class="input-field text-lg" placeholder="お名前"></div>
+        <div class="relative w-full max-w-sm"><input id="customer-address" type="text" class="input-field text-lg" placeholder="ご住所"></div>
+        <div class="relative w-full max-w-sm"><input id="customer-tel" type="tel" class="input-field text-lg" placeholder="ご連絡先"></div>
+        <button data-action="store-customer-info-and-next" data-step="5.2" class="btn btn-primary">記入完了</button>
+    </div>
 </div>
 
-<!-- STEP 5.2 -->
 <div id="step-5.2" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">STEP 5：最終確認</p>
-    <h2 class="text-2xl sm:text-4xl font-serif">👫 ありがとうございます。<br>当日は、パートナーの方もご一緒でしょうか？</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <button data-action="store-and-next" data-key="spousePresent" data-value="はい" data-step="5.3" class="btn btn-primary">はい、います</button>
-        <button data-action="store-and-next" data-key="spousePresent" data-value="いいえ" data-step="5.3" class="btn btn-secondary">いいえ、いません</button>
-    </div>
+    <p class="text-lg text-gray-500">STEP 5：最終確認</p>
+    <h2 class="text-2xl sm:text-4xl font-serif">👫 ありがとうございます。<br>当日は、パートナーの方も<br>ご一緒でしょうか？</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+        <button data-action="store-and-next" data-key="spousePresent" data-value="はい" data-step="5.3" class="btn btn-primary">はい、います</button>
+        <button data-action="store-and-next" data-key="spousePresent" data-value="いいえ" data-step="5.3" class="btn btn-secondary">いいえ、いません</button>
+    </div>
 </div>
 
-<!-- STEP 5.3 -->
 <div id="step-5.3" class="step-screen text-center space-y-8 hidden">
-    <h2 class="text-3xl sm:text-5xl font-serif warm-pink">🎉 ありがとうございました！</h2>
-    <div class="warm-beige-bg p-6 rounded-xl text-left space-y-4">
-        <p class="text-xl"><span class="font-bold text-gray-500">最後に:</span></p>
-        <p class="text-xl">「本当に聞いて良かった」と多くの方に喜んでいただいております。どうぞ、楽しみにしていてくださいね。</p>
-    </div>
-    <div class="text-5xl mt-6">🎁</div>
-    <p class="text-xl mt-2">本日、最後までお話を聞いてくださったお礼に、ささやかなプレゼントをお渡しします。</p>
-    <div class="mt-8 flex justify-end items-center gap-2 sm:gap-4 pr-4">
-        <input type="text" id="担当者-name" class="input-field !text-base !py-3 !px-4 !w-auto" placeholder="担当者名">
-        <button data-action="show-summary" class="btn btn-primary !py-3 !px-6 !text-base">内容を確認</button>
-    </div>
+    <h2 class="text-3xl sm:text-5xl font-serif warm-pink">🎉 ありがとうございました！</h2>
+    <div class="warm-beige-bg p-6 rounded-xl text-left space-y-4">
+        <p class="text-xl"><span class="font-bold text-gray-500">最後に:</span></p>
+        <p class="text-xl">「本当に聞いて良かった」と多くの方に喜んでいただいております。どうぞ、楽しみにしていてくださいね。</p>
+    </div>
+    <div class="text-5xl mt-6">🎁</div>
+    <p class="text-xl mt-2">本日、最後までお話を聞いてくださったお礼に、ささやかなプレゼントをお渡しします。</p>
+    <div class="mt-8 flex justify-end items-center gap-2 sm:gap-4 pr-4">
+        <input type="text" id="担当者-name" class="input-field !text-base !py-3 !px-4 !w-auto" placeholder="担当者名">
+        <button data-action="show-summary" class="btn btn-primary !py-3 !px-6 !text-base">内容を確認</button>
+    </div>
 </div>
 
-
-<!-- FAQ help screens -->
 <div id="step-help_menu_1" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <h2 class="text-3xl sm:text-4xl font-serif">お客様の反応は<br>どのタイプですか？</h2>
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-4 max-w-3xl mx-auto">
-        <button data-action="show-help" data-step="help_q_know" class="btn btn-secondary h-24">聞いたことはある</button>
-        <button data-action="show-help" data-step="help_q_busy" class="btn btn-secondary h-24">忙しい</button>
-        <button data-action="show-help" data-step="help_q_cost" class="btn btn-secondary h-24">お金がかかる</button>
-        <button data-action="show-help" data-step="help_q_solar" class="btn btn-secondary h-24">太陽光の話ならいい</button>
-        <button data-action="show-help" data-step="help_q_vendors" class="btn btn-secondary h-24">よく業者が来る</button>
-        <button data-action="show-help" data-step="help_q_timing" class="btn btn-secondary h-24">今じゃなくても…</button>
-        <button data-action="show-help" data-step="help_q_appearance" class="btn btn-secondary h-24 lg:col-span-3">見た目が嫌だ</button>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary mt-8">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <h2 class="text-3xl sm:text-4xl font-serif">お客様の反応は<br>どのタイプですか？</h2>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-4 max-w-3xl mx-auto">
+        <button data-action="show-help" data-step="help_q_know" class="btn btn-secondary h-24">聞いたことはある</button>
+        <button data-action="show-help" data-step="help_q_busy" class="btn btn-secondary h-24">忙しい</button>
+        <button data-action="show-help" data-step="help_q_cost" class="btn btn-secondary h-24">お金がかかる</button>
+        <button data-action="show-help" data-step="help_q_solar" class="btn btn-secondary h-24">太陽光の話ならいい</button>
+        <button data-action="show-help" data-step="help_q_vendors" class="btn btn-secondary h-24">よく業者が来る</button>
+        <button data-action="show-help" data-step="help_q_timing" class="btn btn-secondary h-24">今じゃなくても…</button>
+        <button data-action="show-help" data-step="help_q_appearance" class="btn btn-secondary h-24 lg:col-span-3">見た目が嫌だ</button>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-8">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_know" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 聞いたことはあるが、何をするものかは知らない。</p>
-        <p>Ａ.「そうなんですね！今回、何かを売り込むという話ではないんです。ちなみに、スマートハウスがどういうものか、簡単にご説明させて頂いてもよろしいですか？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 聞いたことはあるが、何をするものかは知らない。</p>
+        <p>Ａ.「そうなんですね！今回、何かを売り込むという話ではないんです。ちなみに、スマートハウスがどういうものか、簡単にご説明させて頂いてもよろしいですか？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_busy" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 忙しい、すいません。</p>
-        <p>Ａ.「お忙しいところ申し訳ありません、すぐ終わります！ちなみに、今話題のスマートハウスってご存じですか？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 忙しい、すいません。</p>
+        <p>Ａ.「お忙しいところ申し訳ありません、すぐ終わります！ちなみに、今話題のスマートハウスってご存じですか？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_cost" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. お金がかかるからいいわ。</p>
-        <p>Ａ.「そうですよね、以前はそういったイメージが強かったと思います。今回は、<strong class="warm-pink">今の電気代の支払いを活用して、むしろ安くなる</strong>スマートハウスのご提案なんです。ちなみに、スマートハウスがどういうものかご存じですか？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. お金がかかるからいいわ。</p>
+        <p>Ａ.「そうですよね、以前はそういったイメージが強かったと思います。今回は、<strong class="warm-pink">今の電気代の支払いを活用して、むしろ安くなる</strong>スマートハウスのご提案なんです。ちなみに、スマートハウスがどういうものかご存じですか？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_solar" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 太陽光の話ならいいわ。</p>
-        <p>Ａ.「そうですよね。昔は太陽光だけでしたが、今は<strong class="warm-pink">蓄電池とセットで電気代がかからなくなる</strong>、新しいお家の話なんです。実は今後、新築ではこの蓄電池が義務化されるんですよ。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 太陽光の話ならいいわ。</p>
+        <p>Ａ.「そうですよね。昔は太陽光だけでしたが、今は<strong class="warm-pink">蓄電池とセットで電気代がかからなくなる</strong>、新しいお家の話なんです。実は今後、新築ではこの蓄電池が義務化されるんですよ。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_vendors" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. よく業者が来るけど断っている。</p>
-        <p>Ａ.「本当に多いらしいですね。実は、以前同じように断られていた方で、『あなたの話は聞いてよかった、ありがとう』と言って頂けた方がいらっしゃいまして。その方と同じように、少しだけお時間を頂けないでしょうか。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. よく業者が来るけど断っている。</p>
+        <p>Ａ.「本当に多いらしいですね。実は、以前同じように断られていた方で、『あなたの話は聞いてよかった、ありがとう』と言って頂けた方がいらっしゃいまして。その方と同じように、少しだけお時間を頂けないでしょうか。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_timing" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 今すぐやらないとだめなのか。</p>
-        <p>Ａ.「いえ、全くそんなことはありません。ただ、電気代はこれから値上がりすることはあっても、下がることは考えにくいです。どうせなら、<strong class="warm-pink">月々の支払いがほとんどかからない状態</strong>で、効率よく暮らせる方法がある、というお話なんです。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 今すぐやらないとだめなのか。</p>
+        <p>Ａ.「いえ、全くそんなことはありません。ただ、電気代はこれから値上がりすることはあっても、下がることは考えにくいです。どうせなら、<strong class="warm-pink">月々の支払いがほとんどかからない状態</strong>で、効率よく暮らせる方法がある、というお話なんです。後から付ける方も増えていますよ。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_appearance" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">アポFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 見た目が嫌だ。</p>
-        <p>Ａ.「そうおっしゃる方は本当に多いです。ですが、今は<strong class="warm-pink">パネルを屋根に乗せずに見た目を変えない方法</strong>や、色々な場所に付けられるんです。最近は太陽光を付けずに蓄電池だけ、という選択をされる方もいらっしゃいます。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">アポFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 見た目が嫌だ。</p>
+        <p>Ａ.「そうおっしゃる方は本当に多いです。ですが、今は<strong class="warm-pink">パネルを屋根に乗せずに見た目を変えない方法</strong>や、色々な場所に付けられるんです。最近は太陽光を付けずに蓄電池だけ、という選択をされる方もいらっしゃいます。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
-<!-- 日切りFAQ -->
 <div id="step-help_menu_2" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <h2 class="text-3xl sm:text-4xl font-serif">お客様の懸念点は<br>どれですか？</h2>
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-4 max-w-3xl mx-auto">
-        <button data-action="show-help" data-step="help_q_old_house" class="btn btn-secondary h-24">家が古い</button>
-        <button data-action="show-help" data-step="help_q_sunlight" class="btn btn-secondary h-24">日当たりが悪い</button>
-        <button data-action="show-help" data-step="help_q_expensive" class="btn btn-secondary h-24">前に聞いたけど高い</button>
-        <button data-action="show-help" data-step="help_q_hm_expensive" class="btn btn-secondary h-24">HMは高かった</button>
-        <button data-action="show-help" data-step="help_q_broken" class="btn btn-secondary h-24">壊れるのが心配</button>
-        <button data-action="show-help" data-step="help_q_spouse_consent" class="btn btn-secondary h-24">パートナーに相談</button>
-        <button data-action="show-help" data-step="help_q_spouse_schedule" class="btn btn-secondary h-24 lg:col-span-3">パートナーの予定が<br>わからない</button>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary mt-8">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <h2 class="text-3xl sm:text-4xl font-serif">お客様の懸念点は<br>どれですか？</h2>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-4 max-w-3xl mx-auto">
+        <button data-action="show-help" data-step="help_q_old_house" class="btn btn-secondary h-24">家が古い</button>
+        <button data-action="show-help" data-step="help_q_sunlight" class="btn btn-secondary h-24">日当たりが悪い</button>
+        <button data-action="show-help" data-step="help_q_expensive" class="btn btn-secondary h-24">前に聞いたけど高い</button>
+        <button data-action="show-help" data-step="help_q_hm_expensive" class="btn btn-secondary h-24">HMは高かった</button>
+        <button data-action="show-help" data-step="help_q_broken" class="btn btn-secondary h-24">壊れるのが心配</button>
+        <button data-action="show-help" data-step="help_q_spouse_consent" class="btn btn-secondary h-24">パートナーに相談</button>
+        <button data-action="show-help" data-step="help_q_spouse_schedule" class="btn btn-secondary h-24 lg:col-span-3">パートナーの予定が<br>わからない</button>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-8">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_old_house" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 家が古いからできないと思う。</p>
-        <p>Ａ.「メーカーによって対応できる屋根も全然違うんです。他社さんだと２,３社しか扱えない所も多いですが、弊社は<strong class="warm-pink">３０社以上</strong>扱っているので、先日も築５０年で問題なく設置できました。まずは<strong class="warm-pink">ご負担なく設置できるか</strong>、その可能性だけでも見てみませんか？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 家が古いからできないと思う。</p>
+        <p>Ａ.「そうですよね、築年数が経っているとご心配になりますよね。ですが、メーカーによって対応できる屋根も全然違うんです。他社さんだと２,３社しか扱えない所も多いですが、弊社は<strong class="warm-pink">３０社以上</strong>扱っているので、先日も築５０年で『無理だと思う』とおっしゃっていたお宅で問題なく設置できました。まずは<strong class="warm-pink">ご負担なく設置できるか</strong>、その可能性だけでも見てみませんか？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_sunlight" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 日当たりが悪いから難しいと思う。</p>
-        <p>Ａ.「今は蓄電池と組み合わせて<strong class="warm-pink">『ご自宅で使う分だけ発電する』</strong>という考え方が主流です。なので、以前は日当たりで諦めていた方が、改めて検討されるケースが増えているんです。まずは３０分で診断させてください。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 日当たりが悪いから難しいと思う。</p>
+        <p>Ａ.「昔の太陽光のイメージだと、そう思われますよね。以前は『売電』が目的でしたが、今は蓄電池と組み合わせて<strong class="warm-pink">『ご自宅で使う分だけ発電する』</strong>という考え方が主流です。なので、以前は日当たりで諦めていた方が、改めて検討されるケースが増えているんです。もちろん合う合わないはありますので、まずは３０分で診断させてください。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_expensive" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 前に聞いたけど高かったからやめた。</p>
-        <p>Ａ.「実は<strong class="warm-pink">取り扱いメーカーが少ない業者の場合、割高な提案になりがち</strong>なんです。弊社は<strong class="warm-pink">３０社以上</strong>の中からご家庭にぴったりのものを探すので、『前に聞いた時より全然安かった』とおっしゃる方がほとんどなんですよ。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 前に聞いたけど高かったからやめた。</p>
+        <p>Ａ.「そうでしたか！ちなみに、いきなり訪問に来た業者さんでしたか？…そうなんですね、実は<strong class="warm-pink">取り扱いメーカーが少ない業者の場合、割高な提案になりがち</strong>なんです。弊社は<strong class="warm-pink">３０社以上</strong>の中からご家庭にぴったりのものを探すので、『前に聞いた時より全然安かった』とおっしゃる方がほとんどなんですよ。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_hm_expensive" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. ハウスメーカーで聞いたけど高かった。</p>
-        <p>Ａ.「ハウスメーカーさんはどうしても提携先が１,２社に限られてしまい、価格も相場より高くなることが多いんです。私たちは<strong class="warm-pink">多くのメーカーからご家庭に最適なプランを探せる</strong>ので、『あの時の金額は何だったの？』と驚かれる方がほとんどです。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. ハウスメーカーで聞いたけど高かった。</p>
+        <p>Ａ.「おうちを建てられた時ですね、よくお聞きします！ハウスメーカーさんはどうしても提携先が１,２社に限られてしまい、価格も相場より高くなることが多いんです。私たちは<strong class="warm-pink">多くのメーカーからご家庭に最適なプランを探せる</strong>ので、『あの時の金額は何だったの？』と驚かれる方がほとんどです。特に以前ハウスメーカーさんで聞かれた方にこそ、聞いていただきたいお話なんです。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_broken" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 太陽光とかって壊れるんじゃないの？</p>
-        <p>Ａ.「実は太陽光パネルは<strong class="warm-pink">４０年以上もつ</strong>と言われていて、非常に長寿命なんです。だからこそ、国も新築での義務化を進めているんですね。一度設置すれば、お家に住んでいる間ずっと使い続けられますよ。」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 太陽光とかって壊れるんじゃないの？</p>
+        <p>Ａ.「そういったイメージを持たれる方もいらっしゃいますよね。実は太陽光パネルは<strong class="warm-pink">４０年以上もつ</strong>と言われていて、非常に長寿命なんです。だからこそ、国も新築での義務化を進めているんですね。一度設置すれば、お家に住んでいる間ずっと長く使い続けられますよ。」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_spouse_consent" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 主人(奥様)に聞かないとわからない。</p>
-        <p>Ａ.「もちろんです。もしよろしければ、<strong class="warm-pink">パートナー様がいらっしゃる日時に、私から直接ご説明させて頂く</strong>こともできます。その方がスムーズかと思いますが、いかがでしょうか？ちなみに、もしご一緒でしたら平日と土日どちらが…？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 主人(奥様)に聞かないとわからない。</p>
+        <p>Ａ.「もちろんです。ただ、このお話をゼロからご説明されるのって大変ですよね。もしよろしければ、<strong class="warm-pink">パートナー様がいらっしゃる日時に、私から直接ご説明させて頂く</strong>こともできます。その方がスムーズかと思いますが、いかがでしょうか？ちなみに、もしご一緒でしたら平日のと土日どちらが…？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
 
 <div id="step-help_q_spouse_schedule" class="step-screen text-center space-y-6 hidden">
-    <p class="text-lg text-gray-500">日切りFAQ</p>
-    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
-        <p class="font-bold">Ｑ. 主人(奥様)の予定がわからない。</p>
-        <p>Ａ.「でしたら、まずは<strong class="warm-pink">奥様(ご主人様)だけでもお話を聞かれて、そもそもご負担なく設置できそうか確認</strong>してから、パートナー様とご相談されるのはいかがでしょうか？奥様(ご主人様)だけでしたら、平日と土日どちらが…？」</p>
-    </div>
-    <button data-action="hide-help" class="btn btn-primary">元のトークに戻る</button>
+    <p class="text-lg text-gray-500">日切りFAQ</p>
+    <div class="warm-beige-bg p-6 rounded-xl text-left max-w-2xl mx-auto space-y-4 text-xl">
+        <p class="font-bold">Ｑ. 主人(奥様)の予定がわからない。</p>
+        <p>Ａ.「お忙しいのですね。でしたら、まずは<strong class="warm-pink">奥様(ご主人様)だけでもお話を聞かれて、そもそもご負担なく設置できそうか確認</strong>してから、パートナー様とご相談されるのはいかがでしょうか？『結局できませんでした』となるとお互いお手間になってしまいますので…。奥様(ご主人様)だけでしたら、平日と土日どちらが…？」</p>
+    </div>
+    <button data-action="hide-help" class="btn btn-primary mt-4">元のトークに戻る</button>
 </div>
-
-</div><!-- /navigator-container -->
-
-<!-- Modal -->
-<div id="modal-overlay" class="modal-overlay hidden" data-action="close-modal"></div>
+</div><div id="modal-overlay" class="modal-overlay hidden" data-action="close-modal"></div>
 <div id="summary-modal" class="modal-container hidden">
-    <button id="modal-close-button" data-action="close-modal" class="modal-close-btn">&times;</button>
-    <div id="modal-content" class="modal-content"></div>
+    <button id="modal-close-button" data-action="close-modal" class="modal-close-btn">&times;</button>
+    <div id="modal-content" class="modal-content"></div>
 </div>
 
-<!-- Script Panel Drawer (salesperson only) -->
 <div id="script-drawer">
-    <div id="script-drawer-header">
-        <span style="font-size:0.85rem;color:#94a3b8;">📋 営業トークガイド（担当者用）</span>
-        <button id="script-drawer-close" style="color:#94a3b8;font-size:1.3rem;line-height:1;">&times;</button>
-    </div>
-    <div id="script-drawer-body"></div>
+    <div id="script-drawer-header">
+        <span style="font-size:0.85rem;color:#94a3b8;">📋 営業トークガイド（担当者用）</span>
+        <button id="script-drawer-close" style="color:#94a3b8;font-size:1.3rem;line-height:1;">&times;</button>
+    </div>
+    <div id="script-drawer-body"></div>
 </div>
 
-<!-- Footer nav -->
 <div id="footer-nav" class="fixed bottom-0 left-0 w-full bg-white bg-opacity-80 px-4 py-2 flex justify-around items-center z-50 border-t">
-    <button data-action="back-one" class="text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-arrow-left mr-1"></i>一つ戻る</button>
-    <button data-action="forward-one" class="text-gray-500 hover:text-gray-800 transition-colors text-sm">次へ進む<i class="fas fa-arrow-right ml-1"></i></button>
-    <button id="script-toggle-btn" class="text-pink-500 hover:text-pink-700 transition-colors text-sm font-bold"><i class="fas fa-comment-dots mr-1"></i>トーク</button>
-    <button id="summary-modal-button" data-action="show-summary-modal" class="hidden text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-list-check mr-1"></i>回答まとめ</button>
-    <button data-action="restart" class="text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-home mr-1"></i>最初から</button>
+    <button data-action="back-one" class="text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-arrow-left mr-1"></i>一つ戻る</button>
+    <button data-action="forward-one" class="text-gray-500 hover:text-gray-800 transition-colors text-sm">次へ進む<i class="fas fa-arrow-right ml-1"></i></button>
+    <button id="script-toggle-btn" class="text-pink-500 hover:text-pink-700 transition-colors text-sm font-bold"><i class="fas fa-comment-dots mr-1"></i>トーク</button>
+    <button id="summary-modal-button" data-action="show-summary-modal" class="hidden text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-list-check mr-1"></i>回答のまとめ</button>
+    <button data-action="restart" class="text-gray-500 hover:text-gray-800 transition-colors text-sm"><i class="fas fa-home mr-1"></i>最初から</button>
 </div>
 
-<!-- Help nav button -->
 <div id="help-nav" class="fixed bottom-16 right-4 z-50 hidden">
-    <button data-action="show-help" data-step="help_menu_1" class="bg-pink-100 text-pink-500 rounded-full w-20 h-20 flex items-center justify-center shadow-lg hover:bg-pink-200 transition-colors transform hover:scale-110">
-        <svg class="w-16 h-16" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M58.5 25C58.5 20.245 57.5 15.5 54.5 12.5C51.5 9.5 47 10 44.5 13.5C41.5 17.5 41.5 24.5 45.5 29.5C47.234 31.684 49.349 33.351 51.5 34.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M45.5 29.5C42.5 35.5 37.5 43 37.5 50.5C37.5 60.5 45.5 67.5 50.5 67.5C55.5 67.5 63.5 60.5 63.5 50.5C63.5 46.5 62.167 43.167 60.5 40.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </button>
+    <button data-action="show-help" data-step="help_menu_1" class="bg-pink-100 text-pink-500 rounded-full w-20 h-20 flex items-center justify-center shadow-lg hover:bg-pink-200 transition-colors transform hover:scale-110">
+        <svg class="w-16 h-16" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M58.5 25C58.5 20.245 57.5 15.5 54.5 12.5C51.5 9.5 47 10 44.5 13.5C41.5 17.5 41.5 24.5 45.5 29.5C47.234 31.684 49.349 33.351 51.5 34.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M45.5 29.5C42.5 35.5 37.5 43 37.5 50.5C37.5 60.5 45.5 67.5 50.5 67.5C55.5 67.5 63.5 60.5 63.5 50.5C63.5 46.5 62.167 43.167 60.5 40.5" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
 </div>
 
-<!-- Shortcut nav -->
 <div id="shortcut-nav" class="fixed bottom-16 left-4 z-50 hidden flex gap-2 items-end">
-    <button data-action="shortcut-jump" data-step="3.1c" class="bg-white text-gray-700 border-2 border-pink-100 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shadow-lg hover:bg-gray-50 transition-colors transform hover:scale-110">
-        <span class="font-princess text-4xl sm:text-5xl font-bold text-pink-500">L</span>
-    </button>
-    <button id="shortcut-return-btn" data-action="shortcut-return" class="hidden bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-600 transition-all mb-1">
-        <i class="fas fa-undo"></i>
-    </button>
+    <button data-action="shortcut-jump" data-step="3.1c" class="bg-white text-gray-700 border-2 border-pink-100 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shadow-lg hover:bg-gray-50 transition-colors transform hover:scale-110">
+        <span class="font-princess text-4xl sm:text-5xl font-bold text-pink-500">L</span>
+    </button>
+    <button id="shortcut-return-btn" data-action="shortcut-return" class="hidden bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-600 transition-all mb-1">
+        <i class="fas fa-undo"></i>
+    </button>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // ===== Script data: トークスクリプトの内容を各ステップに対応 =====
-    // タイプ: r=受/共感(緑), q=転/質問(橙), m=結/本流(青), t=ポイント(紫)
-    const scriptData = {
-        '0': null,
-        '1.1': {
-            role: '役割：問診する医師 ／ アンカー：「4つだけ」',
-            lines: [
-                {t:'m', s:'あと、ご来店の皆さまに4つだけ確認させて頂いておりまして、お住まいについてお聞きしたいんですが、'},
-                {t:'q', s:'今は持ち家ですか賃貸ですか？'},
-                {t:'q', s:'戸建てになりますかね？'}
-            ]
-        },
-        '1.1c': {
-            role: '役割：問診する医師',
-            lines: [
-                {t:'q', s:'お家を建てられて何年ぐらいですか？'},
-                {t:'r', s:'（新しい場合）本当にまだ新しいおうちですね！素敵ですね'},
-                {t:'t', s:'※築浅（10年未満）なら「この先のこと考えても早めに聞いてて良かったという方が多かった」と付け加えると効果的'}
-            ]
-        },
-        '1.1a': {
-            role: '役割：家計の専門家',
-            lines: [
-                {t:'q', s:'光熱費なんですけど、今、電気とガス、両方払ってもらっていますか？'},
-                {t:'r', s:'（オール電化の場合）オール電化！ オシャレないいおうちですね'},
-                {t:'q', s:'ちなみに、電気代、高い時と安い時あると思うんですけど、大体で大丈夫なんですけど、平均でいくらぐらいですか？'}
-            ]
-        },
-        '1.2': {
-            role: '役割：家計の専門家 ／ イメージ：電気メーターが他人の2倍の速さで回っている映像',
-            lines: [
-                {t:'q', s:'ちなみに、電気代、高い時と安い時あると思うんですけど、大体で大丈夫なんですけど、平均でいくらぐらいですか？'},
-                {t:'t', s:'※お客様が自分で金額を言うことで「高い」という認識を持ってもらいやすくなります'}
-            ]
-        },
-        '1.3': {
-            role: '役割：アドバイザー（驚いて思わず声が出たイメージ）',
-            lines: [
-                {t:'m', s:'○円！ 結構使われていますね！！'},
-                {t:'t', s:'※大きめのリアクションで。驚いた表現として大きめの声でオウム返し。情報を聞いた直後にリアクション'}
-            ]
-        },
-        '1.4': {
-            role: '役割：アドバイザー',
-            lines: [
-                {t:'q', s:'ご家族の人数○人とかですか？（予想より＋2人多めに言う）'},
-                {t:'t', s:'※予想より多め（＋2人）に言うことで「え、そんなに？」という反応を引き出す'}
-            ]
-        },
-        '1.4a': {
-            role: '役割：アドバイザー',
-            lines: [
-                {t:'q', s:'ちなみに、ご家族は大人の方が○人と子供さんとかですかね？'}
-            ]
-        },
-        '1.4a1': {
-            role: '役割：アドバイザー ／ タグ：基準値の提示',
-            lines: [
-                {t:'r', s:'すいません。ちょっと驚いてしまって。'},
-                {t:'m', s:'ちょうど、先ほどのお客様が○人暮らし（同じ人数）だったんですけど、そのかたで毎月○円くらいとおっしゃってましたので、結構使われているなと'},
-                {t:'t', s:'※ウィンザー効果：第三者（他のお客様）の言葉を使って「高い」という認識を持ってもらう'}
-            ]
-        },
-        '1.4b': {
-            role: '役割：アドバイザー',
-            lines: [
-                {t:'r', s:'ありがとうございます。'},
-                {t:'q', s:'あと失礼なんですが、今、ご年齢って何十代の方になりますか？'}
-            ]
-        },
-        '1.6': {
-            role: '役割：問診する医師',
-            lines: [
-                {t:'q', s:'あと、最後になるんですけど、この中で、今おうちで使われている設備とかありますか？'},
-                {t:'r', s:'ありがとうございます。'}
-            ]
-        },
-        '1.7': {
-            role: '役割：問診する医師',
-            lines: [
-                {t:'r', s:'ありがとうございます。'},
-                {t:'m', s:'もし分かれば詳しく教えていただけますか？'}
-            ]
-        },
-        '2.1': {
-            role: '役割：特別な案内人 ／ タグ：ターゲティング',
-            lines: [
-                {t:'r', s:'実は電気代○円以上払われている方にすごく注目されていまして、'},
-                {t:'m', s:'こちら電気代○円以上使われている方だけ案内させてもらっているんですけど、今、○○で場所をお借りして、負担なくスマートハウスにできる施工例様を探させて頂いているんです。'},
-                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'},
-                {t:'t', s:'※「○円以上の方だけ」という属性に合わせたターゲティングで「自分ごと」として認識してもらう'}
-            ]
-        },
-        '2.1a': {
-            role: '役割：特別な案内人',
-            lines: [
-                {t:'m', s:'今回、負担なくスマートハウスにできる施工例様を探しています。'},
-                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'}
-            ]
-        },
-        '2.2': {
-            role: '役割：スマートハウス解説者',
-            lines: [
-                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'},
-                {t:'r', s:'（「知ってるよ」の場合）そうですよね、よかったです。ご存知の通り蓄電池と太陽光使って光熱費払わないおうちなんですが〜'},
-                {t:'r', s:'（「知らない」の場合）→ 通常通りのトークへ'}
-            ]
-        },
-        '2.2a': {
-            role: '役割：スマートハウス解説者 ／ タグ：社会的証明',
-            lines: [
-                {t:'m', s:'どういう事かというと、蓄電池と太陽光を使って光熱費を払わない家のこと。'},
-                {t:'m', s:'今後、新築を立てる時は、義務化になっていく予定で、実際にすでに新築の家では2件に1件がスマートハウスになっていて、電気代を払ってないおうちが増えているんです。'}
-            ]
-        },
-        '2.3': {
-            role: '役割：社会情勢の解説者 ／ タグ：権威性',
-            lines: [
-                {t:'m', s:'国は今後、新築義務化を目指しており、最近はすでに建てられているおうちにも一気に広がっています。'}
-            ]
-        },
-        '2.4': {
-            role: '役割：社会情勢の解説者 ／ アンカー：ニュース',
-            lines: [
-                {t:'m', s:'この1月、2月、3月は電気代に補助金が入りまして少し安くなっていますが、3月には補助金が減ってまた上がってきて、4月にはなくなってしまうので、一気に上がってしまうんですね。'},
-                {t:'m', s:'さらに電気代、今毎年平均で5%ずつ上がっていまして…'}
-            ]
-        },
-        '2.4a': {
-            role: '役割：社会情勢の解説者 ／ タグ：損失回避バイアス',
-            lines: [
-                {t:'r', s:'今、ご主人(奥様)の所ですと、月1万円くらいなので、年間ですと12万円ですが、'},
-                {t:'m', s:'この1月〜3月は補助金で少し安くなっていますが、4月にはなくなって一気に上がってしまうんですね。'},
-                {t:'m', s:'さらに電気代は今毎年5%ずつ上がっていまして、今のままでも10年で120万円、20年で240万円。実際には5%上がっていくので、30年で見ると796万円超えてくる予定になるんですね。'}
-            ]
-        },
-        '2.5': {
-            role: '役割：社会情勢の解説者 ／ タグ：ウィンザー効果',
-            lines: [
-                {t:'r', s:'なので、先ほどお話していたご主人様も、「そんなに払うなんて考えたことなかったけど、そんなに払っていくのは大変だからなにか考えないとね」とおっしゃっていました。'}
-            ]
-        },
-        '3.1': {
-            role: '役割：共感する友人',
-            lines: [
-                {t:'r', s:'多くのお客様が、そうおっしゃいます。'},
-                {t:'m', s:'それもあって、今スマートハウスにして光熱費を今後払わないでいいようにと検討される方が増えています。'}
-            ]
-        },
-        '3.1_video': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'r', s:'それもあって、今スマートハウスにして、こちらのニュースでも紹介されているように、光熱費を今後払わないでいいようにと検討される方が増えています。'},
-                {t:'m', s:'ただ、それをするのに、負担がでたら意味ないじゃないですか？'}
-            ]
-        },
-        '3.1a': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'m', s:'ただ負担がでたら意味がないじゃないですか？'}
-            ]
-        },
-        '3.1b': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'m', s:'だからこそ私たちは、「ご負担なく、スマートハウスにできる施工例様」を探しています。'}
-            ]
-        },
-        '3.2': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'m', s:'光熱費の心配がなくなるだけでなく、もう一つ、スマートハウスにすることで嬉しいポイントがあるんです。'},
-                {t:'q', s:'なにかというと…（次の画面へ）'}
-            ]
-        },
-        '3.2a': {
-            role: '役割：暮らしの防衛アドバイザー ／ タグ：リスクの具体化',
-            lines: [
-                {t:'r', s:'あと、最近は災害も増えてきているので停電の対策としても考えられる人は多かったんです。'},
-                {t:'q', s:'ちなみに、もし停電になった時、困る事ランキングというのがあるんですけど、1番って何だと思いますか？'},
-                {t:'t', s:'※お客様に選んでもらうことで「自分ごと」として考えてもらう。褒めることで好意を持ってもらいやすくなる'}
-            ]
-        },
-        '3.3': {
-            role: '役割：暮らしの防衛アドバイザー',
-            lines: [
-                {t:'r', s:'さすがですね、○○が○番目です！'},
-                {t:'m', s:'万が一、長期停電になっても、蓄電池があれば、電気が使えますので、冷蔵庫も使えて中の物がダメになったりしませんし、明かりがついてトイレとかも普通に使えるというので、最近改めて注目されているんですね。'}
-            ]
-        },
-        '3.3a': {
-            role: '役割：暮らしの防衛アドバイザー',
-            lines: [
-                {t:'m', s:'災害時や停電時には、「備えていてよかった」という声で溢れます。その時、あなたの家だけは「いつもの明るい日常」が続きます。'}
-            ]
-        },
-        '3.4': {
-            role: '役割：共感する友人 ／ ネガの先出し',
-            lines: [
-                {t:'m', s:'「良いのはわかるけど、高いんでしょ？」と言われる方が多かったんです。'},
-                {t:'t', s:'※ネガ（費用への懸念）を先出しすることで、断られにくくする'}
-            ]
-        },
-        '3.5': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'r', s:'ただ、もちろんいいのはわかるけど、蓄電池とか太陽光って高いってイメージ持たれている方が多かったんです。'},
-                {t:'m', s:'そこで先ほどもお話したように、今回○○さんのお客様で地域と棟数を限定してにはなるんですが、負担なくスマートハウスにできる施工例様を募集しております。'}
-            ]
-        },
-        '3.1c': {
-            role: '役割：解決策を提示する救世主',
-            lines: [
-                {t:'m', s:'今も毎月光熱費を払っている上に今後も値上がりは続くので家庭の負担は増えていきます。'},
-                {t:'m', s:'スマートハウスにすると、光熱費ほぼ払わずに済みます。'},
-                {t:'t', s:'※築浅（5年以下）の場合：「先ほどの方も家建てる時そういう話はあったし…結局お金かかるような話だったからやめた、とおっしゃっていたのですが、今後光熱費は払っていかないといけないから施工例として安くなるなら嬉しい」とおっしゃっていました。'}
-            ]
-        },
-        '3.1d': {
-            role: '役割：共感する友人 ／ タグ：ウィンザー効果',
-            lines: [
-                {t:'m', s:'丁度、先ほどお話したご主人様(奥様)も、今後10・20年で○百万円近く払うことになるなら「負担なく光熱費払わないように、できたら嬉しっ」と言われたんですが'},
-                {t:'q', s:'ご主人さま（奥様）としては、負担なくスマートハウスにできて、光熱費が大幅に下がったら、嬉しくないですか？'}
-            ]
-        },
-        '4.1': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'q', s:'もし、負担なくスマートハウスにできて、光熱費が大幅に下がったら…嬉しくないですか？'}
-            ]
-        },
-        '4.1a': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'q', s:'ちなみに、光熱費は高い方がお好きですか？（笑顔で柔らかく）'}
-            ]
-        },
-        '4.2a': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'r', s:'ですよね！'},
-                {t:'m', s:'ただ、ご負担なく実現できるかはお家の状況によって大きく変わります。'}
-            ]
-        },
-        '4.2a1': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'m', s:'屋根の向きや角度、光熱費の使ってる量や時間帯によってかわり、お家によって合う合わないがあります。'},
-                {t:'m', s:'そこで今回、できるかどうかの無料診断をさせてもらっています。'}
-            ]
-        },
-        '4.2b': {
-            role: '役割：背中を押すトレーナー ／ 施工事例を見せる',
-            lines: [
-                {t:'m', s:'今回、○○棟数限定でWEBのオンライン診断を無料で実施中です。'},
-                {t:'m', s:'こちら、実際のお客様の施工事例をご覧ください。（画像を指しながら）'}
-            ]
-        },
-        '4.2c': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'m', s:'まずは設置できるかどうかというのもわからないので、おうちにお伺いして、今回の概要について簡単に30分程度お話させて頂いておりまして、'},
-                {t:'m', s:'丁度、先ほどの方も「そういう話ならこれからも電気代は払っていくし、聞くだけになってもいい」「主人（奥様）と一緒に聞きたいから今週の土曜日に来てっ」と言われまして、次の土曜日の朝にお伺いすることになったんです。'},
-                {t:'m', s:'もちろん、主人(奥様)の予定わからないから、とりあえず一人で聞くわっていう方もいるんですけど。'}
-            ]
-        },
-        '4.3': {
-            role: '役割：背中を押すトレーナー',
-            lines: [
-                {t:'m', s:'生涯光熱費は○○○万円以上。まだ光熱費を払い続けますか？'},
-                {t:'m', s:'30分程度の簡単な無料診断で、施工例に当てはまるかどうか、ぜひ確認していただければと思います。'}
-            ]
-        },
-        '4.4': {
-            role: '役割：背中を押すトレーナー ／ テストクロージング ／ タグ：リスクリバーサル',
-            lines: [
-                {t:'r', s:'ご主人(奥様)の所だと、電気代も○○円とか結構使われていますので、一度は聞いといて頂いたほうがいいとは思いますが、'},
-                {t:'q', s:'もしもそういったお話を聞くとしたら平日と土日どちらがいいですか？'},
-                {t:'t', s:'※ポイント：「もしも」という仮定の話にすることで答えやすくする。2者択一でクローズドクエスチョン。「もし土日だと土曜・日曜どちら？」と絞り込む'}
-            ]
-        },
-        '4.5': {
-            role: '役割：日程確定',
-            lines: [
-                {t:'r', s:'ありがとうございます。'},
-                {t:'q', s:'お時間帯は、午前と午後どちらがよろしいですか？'},
-                {t:'t', s:'※アポ時間は9時、11時半、14時半、17時、19時(20時)の中で設定する'}
-            ]
-        },
-        '4.6_am': {
-            role: '役割：日程確定',
-            lines: [
-                {t:'q', s:'ご希望の時間帯はございますか？（9:00 / 11:30）'},
-                {t:'q', s:'でしたら○日の○時でしたら空いていますが大丈夫ですか？'},
-                {t:'r', s:'ありがとうございます。'}
-            ]
-        },
-        '4.6_pm': {
-            role: '役割：日程確定',
-            lines: [
-                {t:'q', s:'ご希望の時間帯はございますか？（14:30 / 17:00 / 19:00）'},
-                {t:'q', s:'でしたら○日の○時でしたら空いていますが大丈夫ですか？'},
-                {t:'r', s:'ありがとうございます。'}
-            ]
-        },
-        '5.1': {
-            role: '役割：プロフェッショナル ／ 個人情報の記入',
-            lines: [
-                {t:'m', s:'そうしましたら、こちらの下の部分にお名前とご住所、連絡先だけご記入お願いします。'}
-            ]
-        },
-        '5.2': {
-            role: '役割：プロフェッショナル',
-            lines: [
-                {t:'q', s:'（主人と話している場合）ちなみにその日、奥様もいらっしゃいますか？'},
-                {t:'q', s:'（奥様と話している場合）ちなみにその日、旦那様もいらっしゃいますか？'},
-                {t:'r', s:'毎月の光熱費のお話ですし、「一緒に聞いてよかった！」と言われる方が多いので、是非一緒に聞いて頂ければと思います。'}
-            ]
-        },
-        '5.3': {
-            role: '役割：エピローグ プロフェッショナル ／ 約束の強化',
-            lines: [
-                {t:'m', s:'あと資料だけ入れてお渡しますね。'},
-                {t:'m', s:'私ども、社名 といいまして、名刺の方もこちらに入れておきますね。'},
-                {t:'q', s:'（GoogleMAPで確認）一緒におうちの場所だけ確認させて頂いて大丈夫ですか？こちらですかね？'},
-                {t:'m', s:'長くなんで、もしよければ、この洗剤とか1個差し上げていますので、どれがいいとかありますか？'},
-                {t:'m', s:'では、○日の○時にお伺いしますので、よろしくお願い致します。'},
-                {t:'t', s:'※「前に聞かれた方が、最初はわざわざ来てもらってと思ったけど、いろいろ教えてもらって参考になったし、本当に聞いて良かったです。とわざわざ連絡頂いた方もいらっしゃった」と伝える'}
-            ]
-        }
-    };
 
-    // タグの日本語ラベルとCSSクラス
-    const tagConfig = {
-        r: { label: '受/共感', cls: 'tag-r' },
-        q: { label: '転/質問', cls: 'tag-q' },
-        m: { label: '結/本流', cls: 'tag-m' },
-        t: { label: 'ポイント', cls: 'tag-t' }
-    };
+    // ===== Script data: トークスクリプトの内容を各ステップに対応 =====
+    const scriptData = {
+        '0': null,
+        '1.1': {
+            role: '役割：問診する医師 ／ アンカー：「4つだけ」',
+            lines: [
+                {t:'m', s:'あと、ご来店の皆さまに4つだけ確認させて頂いておりまして、お住まいについてお聞きしたいんですが、'},
+                {t:'q', s:'今は持ち家ですか賃貸ですか？'},
+                {t:'q', s:'戸建てになりますかね？'}
+            ]
+        },
+        '1.1c': {
+            role: '役割：問診する医師',
+            lines: [
+                {t:'q', s:'お家を建てられて何年ぐらいですか？'},
+                {t:'r', s:'（新しい場合）本当にまだ新しいおうちですね！素敵ですね'},
+                {t:'t', s:'※築浅（10年未満）なら「この先のこと考えても早めに聞いてて良かったという方が多かった」と付け加えると効果的'}
+            ]
+        },
+        '1.1a': {
+            role: '役割：家計の専門家',
+            lines: [
+                {t:'q', s:'光熱費なんですけど、今、電気とガス、両方払ってもらっていますか？'},
+                {t:'r', s:'（オール電化の場合）オール電化！ オシャレないいおうちですね'},
+                {t:'q', s:'ちなみに、電気代、高い時と安い時あると思うんですけど、大体で大丈夫なんですけど、平均でいくらぐらいですか？'}
+            ]
+        },
+        '1.2': {
+            role: '役割：家計の専門家 ／ イメージ：電気メーターが他人の2倍の速さで回っている映像',
+            lines: [
+                {t:'q', s:'ちなみに、電気代、高い時と安い時あると思うんですけど、大体で大丈夫なんですけど、平均でいくらぐらいですか？'},
+                {t:'t', s:'※お客様が自分で金額を言うことで「高い」という認識を持ってもらいやすくなります'}
+            ]
+        },
+        '1.3': {
+            role: '役割：アドバイザー（驚いて思わず声が出たイメージ）',
+            lines: [
+                {t:'m', s:'○円！ 結構使われていますね！！'},
+                {t:'t', s:'※大きめのリアクションで。驚いた表現として大きめの声でオウム返し。情報を聞いた直後にリアクション'}
+            ]
+        },
+        '1.4': {
+            role: '役割：アドバイザー',
+            lines: [
+                {t:'q', s:'ご家族の人数○人とかですか？（予想より＋2人多めに言う）'},
+                {t:'t', s:'※予想より多め（＋2人）に言うことで「え、そんなに？」という反応を引き出す'}
+            ]
+        },
+        '1.4a': {
+            role: '役割：アドバイザー',
+            lines: [
+                {t:'q', s:'ちなみに、ご家族は大人の方が○人と子供さんとかですかね？'}
+            ]
+        },
+        '1.4a1': {
+            role: '役割：アドバイザー ／ タグ：基準値の提示',
+            lines: [
+                {t:'r', s:'すいません。ちょっと驚いてしまって。'},
+                {t:'m', s:'ちょうど、先ほどのお客様が○人暮らし（同じ人数）だったんですけど、そのかたで毎月○円くらいとおっしゃってましたので、結構使われているなと'},
+                {t:'t', s:'※ウィンザー効果：第三者（他のお客様）の言葉を使って「高い」という認識を持ってもらう'}
+            ]
+        },
+        '1.4b': {
+            role: '役割：アドバイザー',
+            lines: [
+                {t:'r', s:'ありがとうございます。'},
+                {t:'q', s:'あと失礼なんですが、今、ご年齢って何十代の方になりますか？'}
+            ]
+        },
+        '1.6': {
+            role: '役割：問診する医師',
+            lines: [
+                {t:'q', s:'あと、最後になるんですけど、この中で、今おうちで使われている設備とかありますか？'},
+                {t:'r', s:'ありがとうございます。'}
+            ]
+        },
+        '1.7': {
+            role: '役割：問診する医師',
+            lines: [
+                {t:'r', s:'ありがとうございます。'},
+                {t:'m', s:'もし分かれば詳しく教えていただけますか？'}
+            ]
+        },
+        '2.1': {
+            role: '役割：特別な案内人 ／ タグ：ターゲティング',
+            lines: [
+                {t:'r', s:'実は電気代○円以上払われている方にすごく注目されていまして、'},
+                {t:'m', s:'こちら電気代○円以上使われている方だけ案内させてもらっているんですけど、今、○○で場所をお借りして、負担なくスマートハウスにできる施工例様を探させて頂いているんです。'},
+                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'},
+                {t:'t', s:'※「○円以上の方だけ」という属性に合わせたターゲティングで「自分ごと」として認識してもらう'}
+            ]
+        },
+        '2.1a': {
+            role: '役割：特別な案内人',
+            lines: [
+                {t:'m', s:'今回、負担なくスマートハウスにできる施工例様を探しています。'},
+                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'}
+            ]
+        },
+        '2.2': {
+            role: '役割：スマートハウス解説者',
+            lines: [
+                {t:'q', s:'ちなみに、スマートハウスってご存知ですか？'},
+                {t:'r', s:'（「知ってるよ」の場合）そうですよね、よかったです。ご存知の通り蓄電池と太陽光使って光熱費払わないおうちなんですが〜'},
+                {t:'r', s:'（「知らない」の場合）→ 通常通りのトークへ'}
+            ]
+        },
+        '2.2a': {
+            role: '役割：スマートハウス解説者 ／ タグ：社会的証明',
+            lines: [
+                {t:'m', s:'どういう事かというと、蓄電池と太陽光を使って光熱費を払わない家のこと。'},
+                {t:'m', s:'今後、新築を立てる時は、義務化になっていく予定で、実際にすでに新築の家では2件に1件がスマートハウスになっていて、電気代を払ってないおうちが増えているんです。'}
+            ]
+        },
+        '2.3': {
+            role: '役割：社会情勢の解説者 ／ タグ：権威性',
+            lines: [
+                {t:'m', s:'国は今後、新築義務化を目指しており、最近はすでに建てられているおうちにも一気に広がっています。'}
+            ]
+        },
+        '2.4': {
+            role: '役割：社会情勢の解説者 ／ アンカー：ニュース',
+            lines: [
+                {t:'m', s:'この1月、2月、3月は電気代に補助金が入りまして少し安くなっていますが、3月には補助金が減ってまた上がってきて、4月にはなくなってしまうので、一気に上がってしまうんですね。'},
+                {t:'m', s:'さらに電気代、今毎年平均で5%ずつ上がっていまして…'}
+            ]
+        },
+        '2.4a': {
+            role: '役割：社会情勢の解説者 ／ タグ：損失回避バイアス',
+            lines: [
+                {t:'r', s:'今、ご主人(奥様)の所ですと、月1万円くらいなので、年間ですと12万円ですが、'},
+                {t:'m', s:'この1月〜3月は補助金で少し安くなっていますが、4月にはなくなって一気に上がってしまうんですね。'},
+                {t:'m', s:'さらに電気代は今毎年5%ずつ上がっていまして、今のままでも10年で120万円、20年で240万円。実際には5%上がっていくので、30年で見ると796万円超えてくる予定になるんですね。'}
+            ]
+        },
+        '2.5': {
+            role: '役割：社会情勢の解説者 ／ タグ：ウィンザー効果',
+            lines: [
+                {t:'r', s:'なので、先ほどお話していたご主人様も、「そんなに払うなんて考えたことなかったけど、そんなに払っていくのは大変だからなにか考えないとね」とおっしゃっていました。'}
+            ]
+        },
+        '3.1': {
+            role: '役割：共感する友人',
+            lines: [
+                {t:'r', s:'多くのお客様が、そうおっしゃいます。'},
+                {t:'m', s:'それもあって、今スマートハウスにして光熱費を今後払わないでいいようにと検討される方が増えています。'}
+            ]
+        },
+        '3.1_video': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'r', s:'それもあって、今スマートハウスにして、こちらのニュースでも紹介されているように、光熱費を今後払わないでいいようにと検討される方が増えています。'},
+                {t:'m', s:'ただ、それをするのに、負担がでたら意味ないじゃないですか？'}
+            ]
+        },
+        '3.1a': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'m', s:'ただ負担がでたら意味がないじゃないですか？'}
+            ]
+        },
+        '3.1b': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'m', s:'だからこそ私たちは、「ご負担なく、スマートハウスにできる施工例様」を探しています。'}
+            ]
+        },
+        '3.2': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'m', s:'光熱費の心配がなくなるだけでなく、もう一つ、スマートハウスにすることで嬉しいポイントがあるんです。'},
+                {t:'q', s:'なにかというと…（次の画面へ）'}
+            ]
+        },
+        '3.2a': {
+            role: '役割：暮らしの防衛アドバイザー ／ タグ：リスクの具体化',
+            lines: [
+                {t:'r', s:'あと、最近は災害も増えてきているので停電の対策としても考えられる人は多かったんです。'},
+                {t:'q', s:'ちなみに、もし停電になった時、困る事ランキングというのがあるんですけど、1番って何だと思いますか？'},
+                {t:'t', s:'※お客様に選んでもらうことで「自分ごと」として考えてもらう。褒めることで好意を持ってもらいやすくなる'}
+            ]
+        },
+        '3.3': {
+            role: '役割：暮らしの防衛アドバイザー',
+            lines: [
+                {t:'r', s:'さすがですね、○○が○番目です！'},
+                {t:'m', s:'万が一、長期停電になっても、蓄電池があれば、電気が使えますので、冷蔵庫も使えて中の物がダメになったりしませんし、明かりがついてトイレとかも普通に使えるというので、最近改めて注目されているんですね。'}
+            ]
+        },
+        '3.3a': {
+            role: '役割：暮らしの防衛アドバイザー',
+            lines: [
+                {t:'m', s:'災害時や停電時には、「備えていてよかった」という声で溢れます。その時、あなたの家だけは「いつもの明るい日常」が続きます。'}
+            ]
+        },
+        '3.4': {
+            role: '役割：共感する友人 ／ ネガの先出し',
+            lines: [
+                {t:'m', s:'「良いのはわかるけど、高いんでしょ？」と言われる方が多かったんです。'},
+                {t:'t', s:'※ネガ（費用への懸念）を先出しすることで、断られにくくする'}
+            ]
+        },
+        '3.5': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'r', s:'ただ、もちろんいいのはわかるけど、蓄電池とか太陽光って高いってイメージ持たれている方が多かったんです。'},
+                {t:'m', s:'そこで先ほどもお話したように、今回○○さんのお客様で地域と棟数を限定してにはなるんですが、負担なくスマートハウスにできる施工例様を募集しております。'}
+            ]
+        },
+        '3.1c': {
+            role: '役割：解決策を提示する救世主',
+            lines: [
+                {t:'m', s:'今も毎月光熱費を払っている上に今後も値上がりは続くので家庭の負担は増えていきます。'},
+                {t:'m', s:'スマートハウスにすると、光熱費ほぼ払わずに済みます。'},
+                {t:'t', s:'※築浅（5年以下）の場合：「先ほどの方も家建てる時そういう話はあったし…結局お金かかるような話だったからやめた、とおっしゃっていたのですが、今後光熱費は払っていかないといけないから施工例として安くなるなら嬉しい」とおっしゃっていました。'}
+            ]
+        },
+        '3.1d': {
+            role: '役割：共感する友人 ／ タグ：ウィンザー効果',
+            lines: [
+                {t:'m', s:'丁度、先ほどお話したご主人様(奥様)も、今後10・20年で○百万円近く払うことになるなら「負担なく光熱費払わないように、できたら嬉しっ」と言われたんですが'},
+                {t:'q', s:'ご主人さま（奥様）としては、負担なくスマートハウスにできて、光熱費が大幅に下がったら、嬉しくないですか？'}
+            ]
+        },
+        '4.1': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'q', s:'もし、負担なくスマートハウスにできて、光熱費が大幅に下がったら…嬉しくないですか？'}
+            ]
+        },
+        '4.1a': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'q', s:'ちなみに、光熱費は高い方がお好きですか？（笑顔で柔らかく）'}
+            ]
+        },
+        '4.2a': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'r', s:'ですよね！'},
+                {t:'m', s:'ただ、ご負担なく実現できるかはお家の状況によって大きく変わります。'}
+            ]
+        },
+        '4.2a1': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'m', s:'屋根の向きや角度、光熱費の使ってる量や時間帯によってかわり、お家によって合う合わないがあります。'},
+                {t:'m', s:'そこで今回、できるかどうかの無料診断をさせてもらっています。'}
+            ]
+        },
+        '4.2b': {
+            role: '役割：背中を押すトレーナー ／ 施工事例を見せる',
+            lines: [
+                {t:'m', s:'今回、○○棟数限定でWEBのオンライン診断を無料で実施中です。'},
+                {t:'m', s:'こちら、実際のお客様の施工事例をご覧ください。（画像を指しながら）'}
+            ]
+        },
+        '4.2c': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'m', s:'まずは設置できるかどうかというのもわからないので、おうちにお伺いして、今回の概要について簡単に30分程度お話させて頂いておりまして、'},
+                {t:'m', s:'丁度、先ほどの方も「そういう話ならこれからも電気代は払っていくし、聞くだけになってもいい」「主人（奥様）と一緒に聞きたいから今週の土曜日に来てっ」と言われまして、次の土曜日の朝にお伺いすることになったんです。'},
+                {t:'m', s:'もちろん、主人(奥様)の予定わからないから、とりあえず一人で聞くわっていう方もいるんですけど。'}
+            ]
+        },
+        '4.3': {
+            role: '役割：背中を押すトレーナー',
+            lines: [
+                {t:'m', s:'生涯光熱費は○○○万円以上。まだ光熱費を払い続けますか？'},
+                {t:'m', s:'30分程度の簡単な無料診断で、施工例に当てはまるかどうか、ぜひ確認していただければと思います。'}
+            ]
+        },
+        '4.4': {
+            role: '役割：背中を押すトレーナー ／ テストクロージング ／ タグ：リスクリバーサル',
+            lines: [
+                {t:'r', s:'ご主人(奥様)の所だと、電気代も○○円とか結構使われていますので、一度は聞いといて頂いたほうがいいとは思いますが、'},
+                {t:'q', s:'もしもそういったお話を聞くとしたら平日と土日どちらがいいですか？'},
+                {t:'t', s:'※ポイント：「もしも」という仮定の話にすることで答えやすくする。2者択一でクローズドクエスチョン。「もし土日だと土曜・日曜どちら？」と絞り込む'}
+            ]
+        },
+        '4.5': {
+            role: '役割：日程確定',
+            lines: [
+                {t:'r', s:'ありがとうございます。'},
+                {t:'q', s:'お時間帯は、午前と午後どちらがよろしいですか？'},
+                {t:'t', s:'※アポ時間は9時、11時半、14時半、17時、19時(20時)の中で設定する'}
+            ]
+        },
+        '4.6_am': {
+            role: '役割：日程確定',
+            lines: [
+                {t:'q', s:'ご希望の時間帯はございますか？（9:00 / 11:30）'},
+                {t:'q', s:'でしたら○日の○時でしたら空いていますが大丈夫ですか？'},
+                {t:'r', s:'ありがとうございます。'}
+            ]
+        },
+        '4.6_pm': {
+            role: '役割：日程確定',
+            lines: [
+                {t:'q', s:'ご希望の時間帯はございますか？（14:30 / 17:00 / 19:00）'},
+                {t:'q', s:'でしたら○日の○時でしたら空いていますが大丈夫ですか？'},
+                {t:'r', s:'ありがとうございます。'}
+            ]
+        },
+        '5.1': {
+            role: '役割：プロフェッショナル ／ 個人情報の記入',
+            lines: [
+                {t:'m', s:'そうしましたら、こちらの下の部分にお名前とご住所、連絡先だけご記入お願いします。'}
+            ]
+        },
+        '5.2': {
+            role: '役割：プロフェッショナル',
+            lines: [
+                {t:'q', s:'（主人と話している場合）ちなみにその日、奥様もいらっしゃいますか？'},
+                {t:'q', s:'（奥様と話している場合）ちなみにその日、旦那様もいらっしゃいますか？'},
+                {t:'r', s:'毎月の光熱費のお話ですし、「一緒に聞いてよかった！」と言われる方が多いので、是非一緒に聞いて頂ければと思います。'}
+            ]
+        },
+        '5.3': {
+            role: '役割：エピローグ プロフェッショナル ／ 約束の強化',
+            lines: [
+                {t:'m', s:'あと資料だけ入れてお渡しますね。'},
+                {t:'m', s:'私ども、社名 といいまして、名刺の方もこちらに入れておきますね。'},
+                {t:'q', s:'（GoogleMAPで確認）一緒におうちの場所だけ確認させて頂いて大丈夫ですか？こちらですかね？'},
+                {t:'m', s:'長くなんで、もしよければ、この洗剤とか1個差し上げていますので、どれがいいとかありますか？'},
+                {t:'m', s:'では、○日の○時にお伺いしますので、よろしくお願い致します。'},
+                {t:'t', s:'※「前に聞かれた方が、最初はわざわざ来てもらってと思ったけど、いろいろ教えてもらって参考になったし、本当に聞いて良かったです。とわざわざ連絡頂いた方もいらっしゃった」と伝える'}
+            ]
+        }
+    };
 
-    // スクリプトパネル更新
-    const updateScriptPanel = (stepId) => {
-        const body = document.getElementById('script-drawer-body');
-        if (!body) return;
-        const data = scriptData[stepId];
-        if (!data) {
-            body.innerHTML = '<p style="color:#64748b;font-size:0.85rem;">このステップのトークガイドはありません。</p>';
-            return;
-        }
-        let html = `<div class="sp-role">🎭 ${data.role}</div>`;
-        data.lines.forEach(line => {
-            const cfg = tagConfig[line.t] || tagConfig.m;
-            html += `<div class="sp-line"><span class="sp-tag ${cfg.cls}">【${cfg.label}】</span>${line.s}</div>`;
-        });
-        body.innerHTML = html;
-    };
+    const tagConfig = {
+        r: { label: '受/共感', cls: 'tag-r' },
+        q: { label: '転/質問', cls: 'tag-q' },
+        m: { label: '結/本流', cls: 'tag-m' },
+        t: { label: 'ポイント', cls: 'tag-t' }
+    };
 
-    // ===== State =====
-    let currentStep = '0';
-    let stepHistory = ['0'];
-    let lastStepBeforeHelp = '';
-    let shortcutReturnStep = null;
-    const talkData = { simulationShown: false };
+    const updateScriptPanel = (stepId) => {
+        const body = document.getElementById('script-drawer-body');
+        if (!body) return;
+        const data = scriptData[stepId];
+        if (!data) {
+            body.innerHTML = '<p style="color:#64748b;font-size:0.85rem;">このステップのトークガイドはありません。</p>';
+            return;
+        }
+        let html = `<div class="sp-role">🎭 ${data.role}</div>`;
+        data.lines.forEach(line => {
+            const cfg = tagConfig[line.t] || tagConfig.m;
+            html += `<div class="sp-line"><span class="sp-tag ${cfg.cls}">【${cfg.label}】</span>${line.s}</div>`;
+        });
+        body.innerHTML = html;
+    };
 
-    // ===== City name =====
-    const updateCityDisplay = (cityName) => {
-        if (!cityName) return;
-        document.querySelectorAll('.dynamic-city-name').forEach(el => el.textContent = cityName);
-        document.querySelectorAll('.dynamic-city-example').forEach(el => {
-            el.textContent = el.textContent.replace('[あなたの街]', cityName);
-        });
-    };
-    const fetchCityNameByIP = async () => {
-        try {
-            const r = await fetch('https://ipapi.co/json/?language=ja');
-            if (!r.ok) return;
-            const d = await r.json();
-            if (d.city) updateCityDisplay(d.city);
-        } catch(e) {}
-    };
-    const fetchCityName = () => {
-        if (!navigator.geolocation) { fetchCityNameByIP(); return; }
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                try {
-                    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=ja`);
-                    const d = await r.json();
-                    if (d.city) updateCityDisplay(d.city); else fetchCityNameByIP();
-                } catch(e) { fetchCityNameByIP(); }
-            },
-            () => fetchCityNameByIP(),
-            { timeout: 10000, enableHighAccuracy: false }
-        );
-    };
+    // === Global variables and state management ===
+    let currentStep = '0';      // ID of the currently displayed step
+    let stepHistory = ['0'];    // Array to store the history of screen transitions
+    let lastStepBeforeHelp = ''; // Step ID just before pressing the help button
+    let shortcutReturnStep = null; // ショートカットボタンを押す前の画面ID
+    const talkData = { simulationShown: false }; // Object to store hearing contents
 
-    // ===== Hearing summary bar =====
-    const updateHearingSummaryBar = () => {
-        const barContainer = document.getElementById('hearing-summary-container');
-        const bar = document.getElementById('hearing-summary-bar');
-        if (!bar || !barContainer) return;
-        const labels = { housingType:'住居', utilityType:'エネルギー', utilityCost:'光熱費', familySize:'家族', adults:'大人', children:'子供', ageGroup:'年代', buildingAge:'築年数', equipment:'設備', appointmentDayType:'希望日', appointmentTimeOfDay:'時間帯', appointmentTime:'指定時間', customerName:'お名前', customerAddress:'住所', customerTel:'連絡先', spousePresent:'配偶者' };
-        let html = '';
-        for (const key in labels) {
-            if (talkData[key] && String(talkData[key]).length > 0) {
-                let value = talkData[key];
-                if (Array.isArray(value)) { if (value.length === 0) continue; value = value.join(', '); }
-                if (key === 'utilityCost' && typeof value === 'number') value = `${value.toLocaleString()}円`;
-                else if (key === 'adults' || key === 'children') value = `${value}人`;
-                html += `<span class="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs font-medium">${labels[key]}: ${value}</span>`;
-            }
-        }
-        bar.innerHTML = html;
-        barContainer.classList.toggle('hidden', html.length === 0 || currentStep === '0');
-    };
+    // === 堅牢な位置情報取得処理（オリジナル復元） ===
+    const updateCityDisplay = (cityName) => {
+        if (cityName) {
+            document.querySelectorAll('.dynamic-city-name').forEach(target => {
+                target.textContent = cityName;
+            });
+            document.querySelectorAll('.dynamic-city-example').forEach(target => {
+                target.textContent = target.textContent.replace('[あなたの街]', cityName);
+            });
+        }
+    };
 
-    // ===== showStep =====
-    const showStep = (stepId, isBack = false) => {
-        if (currentStep === stepId) return;
-        const cur = document.getElementById(`step-${currentStep}`);
-        if (cur) cur.classList.add('hidden');
-        const next = document.getElementById(`step-${stepId}`);
-        if (next) next.classList.remove('hidden');
-        currentStep = stepId;
-        if (!isBack) stepHistory.push(stepId);
+    const fetchCityNameByIP = async () => {
+        try {
+            const response = await fetch('https://ipapi.co/json/?language=ja');
+            if (!response.ok) throw new Error('Failed to fetch IP-based address');
+            const result = await response.json();
+            const cityName = result.city;
+            if (cityName) updateCityDisplay(cityName);
+        } catch (error) {
+            console.error("IP-based geocoding failed:", error);
+        }
+    };
 
-        const showUI = stepId !== '0' && !stepId.includes('_end') && !stepId.startsWith('help_');
-        document.getElementById('footer-nav').style.display = showUI ? 'flex' : 'none';
-        document.getElementById('help-nav').style.display = showUI ? 'flex' : 'none';
-        const sn = document.getElementById('shortcut-nav');
-        if (sn) sn.style.display = showUI ? 'flex' : 'none';
+    const fetchCityName = () => {
+        if (!navigator.geolocation) {
+            fetchCityNameByIP();
+            return;
+        }
 
-        // FAQ phase switching
-        const helpButton = document.querySelector('#help-nav button');
-        const stepNum = parseFloat(stepId.split('_')[0].replace(/[a-z]/gi, ''));
-        if (stepNum >= 4.2 && stepNum < 6) helpButton.dataset.step = 'help_menu_2';
-        else helpButton.dataset.step = 'help_menu_1';
+        const successCallback = async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            try {
+                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`);
+                if (!response.ok) throw new Error('Failed to fetch address');
+                const result = await response.json();
+                const cityName = result.city;
+                if (cityName) {
+                    updateCityDisplay(cityName);
+                } else {
+                    fetchCityNameByIP();
+                }
+            } catch (error) {
+                fetchCityNameByIP();
+            }
+        };
 
-        const summaryButton = document.getElementById('summary-modal-button');
-        const showSummary = parseFloat(stepId.split('_')[0].replace(/[a-z]/gi, '')) >= 1.1 && !stepId.includes('_end') && !stepId.startsWith('help_');
-        summaryButton.classList.toggle('hidden', !showSummary);
+        const errorCallback = (error) => {
+            fetchCityNameByIP();
+        };
 
-        // Update script panel content for current step
-        updateScriptPanel(stepId);
+        navigator.geolocation.getCurrentPosition(successCallback, errorCallback, {
+            timeout: 10000,
+            enableHighAccuracy: false
+        });
+    };
 
-        updateHearingSummaryBar();
-    };
+    // === Hearing Summary Bar ===
+    const updateHearingSummaryBar = () => {
+        const barContainer = document.getElementById('hearing-summary-container');
+        const bar = document.getElementById('hearing-summary-bar');
+        if (!bar || !barContainer) return;
 
-    // ===== Reset =====
-    const resetApp = () => {
-        for (const key in talkData) delete talkData[key];
-        talkData.simulationShown = false;
-        stepHistory = ['0'];
-        showStep('0', true);
-        document.querySelectorAll('input[type="number"], input[type="text"], input[type="tel"]').forEach(el => el.value = '');
-        document.querySelectorAll('.btn-selected').forEach(btn => { btn.classList.remove('btn-selected'); btn.classList.add('btn-secondary'); });
-        // Close script drawer on reset
-        document.getElementById('script-drawer').classList.remove('open');
-    };
+        const labels = {
+            housingType: '住居', utilityType: 'エネルギー', utilityCost: '光熱費', familySize: '家族',
+            adults: '大人', children: '子供', ageGroup: '年代', buildingAge: '築年数',
+            equipment: '設備', appointmentDayType: '希望日', appointmentTimeOfDay: '時間帯',
+            appointmentTime: '指定時間', customerName: 'お名前', customerAddress: '住所',
+            customerTel: '連絡先', spousePresent: '配偶者'
+        };
 
-    const prepareEquipmentDetailPage = () => {
-        const equipment = talkData.equipment || [];
-        const solarSection = document.getElementById('solar-details-section');
-        const otherSection = document.getElementById('other-equip-details-section');
-        otherSection.innerHTML = '';
-        solarSection.classList.toggle('hidden', !equipment.includes('太陽光発電'));
-        const otherEquipMap = { '蓄電池':'🔋 蓄電池', 'エコキュート':'💧 エコキュート', 'エネファーム':'🔥 エネファーム', '電気自動車':'🚗 電気自動車' };
-        equipment.forEach(item => {
-            if (otherEquipMap[item]) {
-                const key = item.replace(/\s/g, '');
-                otherSection.insertAdjacentHTML('beforeend', `<div class="warm-beige-bg p-4 rounded-lg mt-4"><h3 class="text-xl font-serif warm-pink mb-2">${otherEquipMap[item]}</h3><input type="number" id="equip-year-${key}" class="input-field" placeholder="設置年数 (年)"></div>`);
-            }
-        });
-    };
+        let html = '';
+        for (const key in labels) {
+            if (talkData[key] && String(talkData[key]).length > 0) {
+                let value = talkData[key];
+                if (Array.isArray(value)) {
+                    if (value.length === 0) continue;
+                    value = value.join(', ');
+                }
+                if (key === 'utilityCost' && typeof value === 'number') {
+                    value = `${value.toLocaleString()}円`;
+                } else if (key === 'adults' || key === 'children') {
+                    value = `${value}人`;
+                }
+                html += `<span class="bg-pink-100 text-pink-700 px-2 py-1 rounded-full text-xs font-medium">${labels[key]}: ${value}</span>`;
+            }
+        }
 
-    const generateSummaryContent = (data) => {
-        const now = new Date();
-        const summaryDate = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        let equipmentList = data.equipment?.length > 0 ? `<ul>${data.equipment.map(i=>`<li class="ml-4 list-disc">${i}</li>`).join('')}</ul>` : '選択なし';
-        let utilityDetails = data.utilityType === 'オール電化'
-            ? `<p><strong>電気代:</strong> ${data.electricBill ? data.electricBill.toLocaleString()+'円' : '未入力'}</p>`
-            : `<p><strong>電気代:</strong> ${data.electricBill ? data.electricBill.toLocaleString()+'円' : '未入力'}</p><p><strong>ガス代:</strong> ${data.gasBill ? data.gasBill.toLocaleString()+'円' : '未入力'}</p><p><strong>合計:</strong> ${data.utilityCost ? data.utilityCost.toLocaleString()+'円' : '未入力'}</p>`;
-        const showCustomer = data.customerName || data.customerAddress || data.customerTel || data.ageGroup;
-        const showAppoint = data.appointmentDayType || data.appointmentTimeOfDay || data.appointmentTime || data.spousePresent;
-        return `
-        <header class="flex justify-between items-start border-b-2 border-pink-500 pb-4">
-            <div><h1 class="text-3xl font-bold text-gray-800">回答内容のご確認</h1><p class="text-gray-500">${summaryDate}</p></div>
-            <div class="text-right"><p class="text-gray-600">担当者: <span class="font-bold">${data.担当者||'未入力'}</span></p><div class="text-pink-500 mt-2"><i class="fas fa-solar-panel fa-3x"></i></div></div>
-        </header>
-        <main class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="md:col-span-2 bg-gray-50 p-6 rounded-lg">
-                <h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">お住まいの状況</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                    <p><strong>お住まい:</strong> ${data.housingType||'未選択'}</p>
-                    <p><strong>エネルギー:</strong> ${data.utilityType||'未選択'}</p>
-                    <div class="sm:col-span-2">${utilityDetails}</div>
-                    <p><strong>ご家族構成:</strong> ${data.familySize||'未選択'} (大人${data.adults||0}人, 子供${data.children||0}人)</p>
-                    <p><strong>築年数:</strong> ${data.buildingAge||'未選択'}</p>
-                    <div class="sm:col-span-2"><strong>設置設備:</strong> ${equipmentList}</div>
-                </div>
-            </div>
-            ${showCustomer ? `<div class="bg-gray-50 p-6 rounded-lg"><h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">お客様情報</h2><div class="space-y-3"><p><strong class="w-24 inline-block">お名前:</strong> ${data.customerName||'未記入'}</p><p><strong class="w-24 inline-block">ご住所:</strong> ${data.customerAddress||'未記入'}</p><p><strong class="w-24 inline-block">ご連絡先:</strong> ${data.customerTel||'未記入'}</p><p><strong class="w-24 inline-block">年代:</strong> ${data.ageGroup||'未選択'}</p></div></div>` : ''}
-            ${showAppoint ? `<div class="bg-gray-50 p-6 rounded-lg"><h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">ご希望日時</h2><div class="space-y-3"><p><strong class="w-24 inline-block">ご希望曜日:</strong> ${data.appointmentDayType||'未選択'}</p><p><strong class="w-24 inline-block">ご希望時間帯:</strong> ${data.appointmentTimeOfDay||'未選択'}</p><p><strong class="w-24 inline-block">確定時間:</strong> ${data.appointmentTime||'未選択'}</p><p><strong class="w-24 inline-block">配偶者在宅:</strong> ${data.spousePresent||'未確認'}</p></div></div>` : ''}
-        </main>`;
-    };
+        bar.innerHTML = html;
+        if (html.length > 0 && currentStep !== '0') {
+            barContainer.classList.remove('hidden');
+        } else {
+            barContainer.classList.add('hidden');
+        }
+    };
 
-    const generateSummaryHTML = (data) => `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>回答内容のご確認</title><script src="https://cdn.tailwindcss.com"><\/script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Noto Sans JP',sans-serif}@media print{.no-print{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body class="bg-gray-100"><div class="max-w-4xl mx-auto p-8 bg-white shadow-lg my-8">${generateSummaryContent(data)}<footer class="mt-12 text-center no-print"><button onclick="window.print()" class="bg-pink-600 text-white font-bold py-3 px-12 rounded-lg hover:bg-pink-700 transition-colors"><i class="fas fa-print mr-2"></i>この内容を印刷する</button></footer></div></body></html>`;
+    // === Navigation Function ===
+    const showStep = (stepId, isBack = false) => {
+        if (currentStep === stepId) return;
 
-    // ===== Script drawer toggle =====
-    const drawer = document.getElementById('script-drawer');
-    document.getElementById('script-toggle-btn').addEventListener('click', () => {
-        drawer.classList.toggle('open');
-        if (drawer.classList.contains('open')) updateScriptPanel(currentStep);
-    });
-    document.getElementById('script-drawer-close').addEventListener('click', () => {
-        drawer.classList.remove('open');
-    });
+        const currentScreen = document.getElementById(`step-${currentStep}`);
+        if (currentScreen) currentScreen.classList.add('hidden');
 
-    // ===== Main event delegation =====
-    document.body.addEventListener('click', (e) => {
-        const button = e.target.closest('button');
-        if (!button) {
-            const link = e.target.closest('a');
-            if (link && link.id === 'show-average-cost') { e.preventDefault(); document.getElementById('average-cost-info').classList.toggle('hidden'); }
-            return;
-        }
-        const action = button.dataset.action;
-        const nextStepId = button.dataset.step;
-        switch (action) {
-            case 'restart': resetApp(); break;
-            case 'back-one':
-                if (stepHistory.length > 1) { stepHistory.pop(); showStep(stepHistory[stepHistory.length - 1], true); }
-                break;
-            case 'forward-one': {
-                const cur = document.getElementById(`step-${currentStep}`);
-                if (cur) { const nb = cur.querySelector('.btn-primary[data-action]'); if (nb) nb.click(); }
-                break;
-            }
-            case 'next-step': if (nextStepId) showStep(nextStepId); break;
-            case 'store-and-next':
-                if (button.dataset.key) talkData[button.dataset.key] = button.dataset.value;
-                if (button.dataset.key === 'utilityType') document.getElementById('utility-input-gas').classList.toggle('hidden', button.dataset.value === 'オール電化');
-                if (currentStep === '1.4a') {
-                    talkData.adults = document.getElementById('adult-count').value;
-                    talkData.children = document.getElementById('child-count').value;
-                    document.getElementById('family-size-analysis').textContent = talkData.familySize || '...名様';
-                    document.getElementById('cost-analysis').textContent = talkData.utilityCost ? talkData.utilityCost.toLocaleString() : '...';
-                }
-                if (nextStepId) showStep(nextStepId);
-                break;
-            case 'submit-utility-cost': {
-                const elec = parseInt(document.getElementById('electric-bill-input').value, 10) || 0;
-                const gas = parseInt(document.getElementById('gas-bill-input').value, 10) || 0;
-                const total = elec + gas;
-                talkData.electricBill = elec;
-                talkData.gasBill = (talkData.utilityType === 'ガス併用') ? gas : 0;
-                talkData.utilityCost = total;
-                talkData.simulationShown = true;
-                document.getElementById('bill-amount-text').textContent = total.toLocaleString();
-                const threshold = Math.floor((total - 2000) / 1000) * 1000;
-                document.getElementById('bill-threshold-text').textContent = threshold > 0 ? threshold.toLocaleString() : '一定額';
-                document.getElementById('current-bill-example').textContent = total.toLocaleString();
-                document.getElementById('annual-cost').textContent = (total * 12).toLocaleString();
-                document.getElementById('decade-cost').textContent = (total * 12 * 10).toLocaleString();
-                const future = Math.round(total * 12 * (Math.pow(1.05, 30) - 1) / 0.05 / 10000);
-                document.getElementById('future-cost-text').textContent = `${future.toLocaleString()}万円`;
-                const ftLegacy = document.getElementById('future-cost-text-legacy'); if(ftLegacy) ftLegacy.textContent = `${future.toLocaleString()}万円`;
-                document.getElementById('future-cost-text-2').textContent = `${future.toLocaleString()}万円以上`;
-                showStep('1.3');
-                break;
-            }
-            case 'select-reason':
-                document.getElementById('reason-text').textContent = button.dataset.reason;
-                showStep('3.3');
-                break;
-            case 'toggle-select':
-                button.classList.toggle('btn-secondary');
-                button.classList.toggle('btn-selected');
-                break;
-            case 'process-equipment-and-next':
-                talkData.equipment = Array.from(document.querySelectorAll('#equipment-options .btn-selected')).map(btn => btn.dataset.value);
-                if (talkData.equipment.length > 0) { prepareEquipmentDetailPage(); showStep('1.7'); }
-                else showStep('2.1');
-                break;
-            case 'select-fit':
-                button.parentElement.querySelectorAll('button').forEach(btn => { btn.classList.remove('btn-selected'); btn.classList.add('btn-secondary'); });
-                button.classList.add('btn-selected'); button.classList.remove('btn-secondary');
-                talkData[button.dataset.key] = button.dataset.value;
-                break;
-            case 'store-equipment-details-and-next':
-                if (talkData.equipment && talkData.equipment.includes('太陽光発電')) {
-                    talkData.solarInstalledYear = document.getElementById('solar-year').value;
-                    talkData.solarFITPrice = document.getElementById('solar-price').value;
-                }
-                ['蓄電池','エコキュート','エネファーム','電気自動車'].forEach(name => {
-                    const input = document.getElementById(`equip-year-${name.replace(/\s/g,'')}`);
-                    if (input) talkData[`equipYear${name}`] = input.value;
-                });
-                if (nextStepId) showStep(nextStepId);
-                break;
-            case 'select-time':
-                talkData.appointmentTime = button.textContent;
-                showStep(nextStepId);
-                break;
-            case 'select-time-other': {
-                button.closest('.time-selection-grid').querySelectorAll('button').forEach(btn => btn.classList.remove('btn-selected'));
-                button.classList.add('btn-selected');
-                document.getElementById(button.dataset.controls).classList.remove('hidden');
-                break;
-            }
-            case 'store-other-time-and-next':
-                talkData.appointmentTime = document.getElementById(button.dataset.target).value;
-                if (nextStepId) showStep(nextStepId);
-                break;
-            case 'store-customer-info-and-next':
-                talkData.customerName = document.getElementById('customer-name').value;
-                talkData.customerAddress = document.getElementById('customer-address').value;
-                talkData.customerTel = document.getElementById('customer-tel').value;
-                if (nextStepId) showStep(nextStepId);
-                break;
-            case 'show-summary': {
-                talkData.担当者 = document.getElementById('担当者-name').value;
-                const w = window.open('', '_blank');
-                w.document.write(generateSummaryHTML(talkData));
-                w.document.close();
-                break;
-            }
-            case 'show-summary-modal':
-                talkData.担当者 = document.getElementById('担当者-name')?.value || talkData.担当者 || '';
-                document.getElementById('modal-content').innerHTML = generateSummaryContent(talkData);
-                document.getElementById('modal-overlay').classList.remove('hidden');
-                document.getElementById('summary-modal').classList.remove('hidden');
-                break;
-            case 'close-modal':
-                document.getElementById('modal-overlay').classList.add('hidden');
-                document.getElementById('summary-modal').classList.add('hidden');
-                document.getElementById('modal-content').innerHTML = '';
-                break;
-            case 'show-help':
-                if (!currentStep.startsWith('help_')) lastStepBeforeHelp = currentStep;
-                showStep(button.dataset.step);
-                break;
-            case 'hide-help':
-                if (lastStepBeforeHelp) { stepHistory = stepHistory.filter(s => !s.startsWith('help_')); showStep(lastStepBeforeHelp, true); }
-                break;
-            case 'shortcut-jump':
-                shortcutReturnStep = currentStep;
-                document.getElementById('shortcut-return-btn').classList.remove('hidden');
-                showStep(button.dataset.step);
-                break;
-            case 'shortcut-return':
-                if (shortcutReturnStep) {
-                    showStep(shortcutReturnStep, true);
-                    document.getElementById('shortcut-return-btn').classList.add('hidden');
-                    shortcutReturnStep = null;
-                }
-                break;
-        }
-    });
+        const nextScreen = document.getElementById(`step-${stepId}`);
+        if (nextScreen) nextScreen.classList.remove('hidden');
 
-    fetchCityName();
-    showStep('0');
+        currentStep = stepId;
+
+        if (!isBack) stepHistory.push(stepId);
+
+        const showFooterAndHelp = stepId !== '0' && !stepId.includes('_end') && !stepId.startsWith('help_');
+        document.getElementById('footer-nav').style.display = showFooterAndHelp ? 'flex' : 'none';
+        document.getElementById('help-nav').style.display = showFooterAndHelp ? 'flex' : 'none';
+        
+        const shortcutNav = document.getElementById('shortcut-nav');
+        if(shortcutNav) shortcutNav.style.display = showFooterAndHelp ? 'flex' : 'none';
+
+        // FAQ Switching Logic
+        const helpButton = document.querySelector('#help-nav button');
+        const stepNumberStr = stepId.split('_')[0].replace(/[a-z]/gi, '');
+        const stepNumber = parseFloat(stepNumberStr);
+
+        if (stepNumber >= 4.2 && stepNumber < 6) {
+            helpButton.dataset.step = 'help_menu_2';
+        } else {
+            helpButton.dataset.step = 'help_menu_1';
+        }
+
+        const summaryButton = document.getElementById('summary-modal-button');
+        const shouldShowSummaryButton = parseFloat(stepNumberStr) >= 1.1 && !stepId.includes('_end') && !stepId.startsWith('help_');
+        if (shouldShowSummaryButton) {
+            summaryButton.classList.remove('hidden');
+        } else {
+            summaryButton.classList.add('hidden');
+        }
+
+        // スクリプトとサマリーの更新
+        updateScriptPanel(stepId);
+        updateHearingSummaryBar();
+    };
+
+    const resetApp = () => {
+        for (const key in talkData) delete talkData[key];
+        talkData.simulationShown = false;
+        stepHistory = ['0'];
+        showStep('0', true);
+        const inputs = document.querySelectorAll('input[type="number"], input[type="text"], input[type="tel"]');
+        inputs.forEach(input => input.value = '');
+        document.querySelectorAll('.btn-selected').forEach(btn => {
+            btn.classList.remove('btn-selected');
+            btn.classList.add('btn-secondary');
+        });
+        document.getElementById('script-drawer').classList.remove('open');
+    };
+
+    const prepareEquipmentDetailPage = () => {
+        const equipment = talkData.equipment || [];
+        const solarSection = document.getElementById('solar-details-section');
+        const otherSection = document.getElementById('other-equip-details-section');
+
+        otherSection.innerHTML = '';
+
+        if (equipment.includes('太陽光発電')) {
+            solarSection.classList.remove('hidden');
+        } else {
+            solarSection.classList.add('hidden');
+        }
+
+        const otherEquipMap = {
+            '蓄電池': '🔋 蓄電池',
+            'エコキュート': '💧 エコキュート',
+            'エネファーム': '🔥 エネファーム',
+            '電気自動車': '🚗 電気自動車'
+        };
+
+        equipment.forEach(item => {
+            if (otherEquipMap[item]) {
+                const equipKey = item.replace(/\s/g, '');
+                const html = `
+                <div class="warm-beige-bg p-4 rounded-lg mt-4">
+                    <h3 class="text-xl font-serif warm-pink mb-2">${otherEquipMap[item]}</h3>
+                    <input type="number" id="equip-year-${equipKey}" class="input-field" placeholder="設置年数 (年)">
+                </div>`;
+                otherSection.insertAdjacentHTML('beforeend', html);
+            }
+        });
+    };
+
+    // === 完全復元したサマリー生成処理 ===
+    const generateSummaryContent = (data) => {
+        const now = new Date();
+        const summaryDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        let equipmentList = data.equipment?.length > 0 ? `<ul>${data.equipment.map(item => `<li class="ml-4 list-disc">${item}</li>`).join('')}</ul>` : '選択なし';
+
+        if (data.solarInstalledYear || data.solarFITPrice || data.solarFITPeriod || data.solarManufacturer || data.solarCapacity) {
+            equipmentList += `<h4 class="font-bold mt-2">☀️ 太陽光発電 詳細</h4><ul>
+            <li class="ml-4">設置年数: ${data.solarInstalledYear || '未入力'}年</li>
+            <li class="ml-4">売電収入: ${data.solarFITPrice || '未入力'}円</li>
+            <li class="ml-4">売電期間: ${data.solarFITPeriod || '未選択'}</li>
+            ${data.solarManufacturer ? `<li class="ml-4">メーカー: ${data.solarManufacturer}</li>` : ''}
+            ${data.solarCapacity ? `<li class="ml-4">容量: ${data.solarCapacity}kW</li>` : ''}
+            </ul>`;
+        }
+        ['蓄電池', 'エコキュート', 'エネファーム', '電気自動車'].forEach(name => {
+            const key = `equipYear${name}`;
+            if(data[key]) {
+                equipmentList += `<h4 class="font-bold mt-2">${name}</h4><ul><li class="ml-4">設置年数: ${data[key]}年</li></ul>`;
+            }
+        });
+
+        let utilityDetails = '';
+        if(data.utilityType === 'オール電化') {
+            utilityDetails = `<p><strong>電気代:</strong> ${data.electricBill ? data.electricBill.toLocaleString() + '円' : '未入力'}</p>`;
+        } else {
+            utilityDetails = `
+            <p><strong>電気代:</strong> ${data.electricBill ? data.electricBill.toLocaleString() + '円' : '未入力'}</p>
+            <p><strong>ガス代:</strong> ${data.gasBill ? data.gasBill.toLocaleString() + '円' : '未入力'}</p>
+            <p><strong>光熱費合計:</strong> ${data.utilityCost ? data.utilityCost.toLocaleString() + '円' : '未入力'}</p>`;
+        }
+
+        const showCustomerInfo = (data.customerName?.length > 0) || (data.customerAddress?.length > 0) || (data.customerTel?.length > 0) || (data.ageGroup?.length > 0);
+        const showAppointmentInfo = (data.appointmentDayType?.length > 0) || (data.appointmentTimeOfDay?.length > 0) || (data.appointmentTime?.length > 0) || (data.spousePresent?.length > 0);
+
+        return `
+        <header class="flex justify-between items-start border-b-2 border-pink-500 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">回答内容のご確認</h1>
+                <p class="text-gray-500">${summaryDate}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-gray-600">担当者: <span class="font-bold">${data.担当者 || '未入力'}</span></p>
+                <div class="text-pink-500 mt-2"> <i class="fas fa-solar-panel fa-3x"></i> </div>
+            </div>
+        </header>
+        <main class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="md:col-span-2 bg-gray-50 p-6 rounded-lg">
+                <h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">お住まいの状況</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                    <p><strong>お住まい:</strong> ${data.housingType || '未選択'}</p>
+                    <p><strong>エネルギー:</strong> ${data.utilityType || '未選択'}</p>
+                    <div class="sm:col-span-2">${utilityDetails}</div>
+                    <p><strong>ご家族構成:</strong> ${data.familySize || '未選択'} (大人${data.adults || 0}人, 子供${data.children || 0}人)</p>
+                    <p><strong>築年数:</strong> ${data.buildingAge || '未選択'}</p>
+                    <div class="sm:col-span-2"><strong>設置設備:</strong> ${equipmentList}</div>
+                </div>
+            </div>
+            ${showCustomerInfo ? `
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">お客様情報</h2>
+                <div class="space-y-3">
+                    <p><strong class="w-24 inline-block">お名前:</strong> ${data.customerName || '未記入'}</p>
+                    <p><strong class="w-24 inline-block">ご住所:</strong> ${data.customerAddress || '未記入'}</p>
+                    <p><strong class="w-24 inline-block">ご連絡先:</strong> ${data.customerTel || '未記入'}</p>
+                    <p><strong class="w-24 inline-block">年代:</strong> ${data.ageGroup || '未選択'}</p>
+                </div>
+            </div>` : ''}
+            ${showAppointmentInfo ? `
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <h2 class="text-xl font-bold text-pink-600 border-b pb-2 mb-4">ご希望日時</h2>
+                <div class="space-y-3">
+                    <p><strong class="w-24 inline-block">ご希望曜日:</strong> ${data.appointmentDayType || '未選択'}</p>
+                    <p><strong class="w-24 inline-block">ご希望時間帯:</strong> ${data.appointmentTimeOfDay || '未選択'}</p>
+                    <p><strong class="w-24 inline-block">確定時間:</strong> ${data.appointmentTime || '未選択'}</p>
+                    <p><strong class="w-24 inline-block">配偶者在宅:</strong> ${data.spousePresent || '未確認'}</p>
+                </div>
+            </div>` : ''}
+        </main>`;
+    };
+
+    const generateSummaryHTML = (data) => {
+        const summaryContent = generateSummaryContent(data);
+        return `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>回答内容のご確認</title><script src="https://cdn.tailwindcss.com"><\/script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet"><style>body { font-family: 'Noto Sans JP', sans-serif; } @media print { .no-print { display: none; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }</style></head><body class="bg-gray-100"><div class="max-w-4xl mx-auto p-8 bg-white shadow-lg my-8">${summaryContent}<footer class="mt-12 text-center no-print"><button onclick="window.print()" class="bg-pink-600 text-white font-bold py-3 px-12 rounded-lg hover:bg-pink-700 transition-colors"><i class="fas fa-print mr-2"></i>この内容を印刷する</button></footer></div></body></html>`;
+    };
+
+    // ===== Script drawer toggle =====
+    const drawer = document.getElementById('script-drawer');
+    document.getElementById('script-toggle-btn').addEventListener('click', () => {
+        drawer.classList.toggle('open');
+        if (drawer.classList.contains('open')) updateScriptPanel(currentStep);
+    });
+    document.getElementById('script-drawer-close').addEventListener('click', () => {
+        drawer.classList.remove('open');
+    });
+
+    // ===== Event listeners =====
+    document.body.addEventListener('click', (e) => {
+        const button = e.target.closest('button');
+        if (!button) {
+            const link = e.target.closest('a');
+            if (link && link.id === 'show-average-cost') {
+                e.preventDefault();
+                document.getElementById('average-cost-info').classList.toggle('hidden');
+            }
+            return;
+        }
+
+        const action = button.dataset.action;
+        const nextStepId = button.dataset.step;
+
+        switch (action) {
+            case 'restart':
+                resetApp();
+                break;
+            case 'back-one':
+                if (stepHistory.length > 1) {
+                    stepHistory.pop();
+                    const prevStepId = stepHistory[stepHistory.length - 1];
+                    showStep(prevStepId, true);
+                }
+                break;
+            case 'forward-one': {
+                const currentScreen = document.getElementById(`step-${currentStep}`);
+                if (currentScreen) {
+                    const nextButton = currentScreen.querySelector('.btn-primary[data-action]');
+                    if (nextButton) nextButton.click();
+                }
+                break;
+            }
+            case 'next-step':
+            case 'go-to-step':
+                if (nextStepId) showStep(nextStepId);
+                break;
+            case 'store-and-next':
+                if (button.dataset.key) talkData[button.dataset.key] = button.dataset.value;
+                if (button.dataset.key === 'utilityType') {
+                    document.getElementById('utility-input-gas').classList.toggle('hidden', button.dataset.value === 'オール電化');
+                }
+                if(currentStep === '1.4a') {
+                    talkData.adults = document.getElementById('adult-count').value;
+                    talkData.children = document.getElementById('child-count').value;
+                    document.getElementById('family-size-analysis').textContent = talkData.familySize || '...名様';
+                    document.getElementById('cost-analysis').textContent = talkData.utilityCost ? talkData.utilityCost.toLocaleString() : '...';
+                }
+                if (nextStepId) showStep(nextStepId);
+                break;
+            case 'submit-utility-cost': {
+                const electricBill = parseInt(document.getElementById('electric-bill-input').value, 10) || 0;
+                const gasBill = parseInt(document.getElementById('gas-bill-input').value, 10) || 0;
+                const totalCost = electricBill + gasBill;
+
+                talkData.electricBill = electricBill;
+                talkData.gasBill = (talkData.utilityType === 'ガス併用') ? gasBill : 0;
+                talkData.utilityCost = totalCost;
+                talkData.simulationShown = true;
+
+                document.getElementById('bill-amount-text').textContent = totalCost.toLocaleString();
+                const threshold = Math.floor((totalCost - 2000) / 1000) * 1000;
+                document.getElementById('bill-threshold-text').textContent = threshold > 0 ? threshold.toLocaleString() : '一定額';
+                
+                document.getElementById('current-bill-example').textContent = totalCost.toLocaleString();
+                document.getElementById('annual-cost').textContent = (totalCost * 12).toLocaleString();
+                document.getElementById('decade-cost').textContent = (totalCost * 12 * 10).toLocaleString();
+
+                // 複利計算を元コードから復元
+                const annualCost = totalCost * 12;
+                const rate = 0.05;
+                const years = 30;
+                const futureTotalCost = annualCost * (Math.pow(1 + rate, years) - 1) / rate;
+                const totalCostInMan = Math.round(futureTotalCost / 10000);
+                
+                document.getElementById('future-cost-text').textContent = `${totalCostInMan.toLocaleString()}万円`;
+                document.getElementById('future-cost-text-2').textContent = `${totalCostInMan.toLocaleString()}万円以上`;
+                
+                showStep('1.3');
+                break;
+            }
+            case 'select-reason':
+                document.getElementById('reason-text').textContent = button.dataset.reason;
+                showStep('3.3');
+                break;
+            case 'toggle-select':
+                button.classList.toggle('btn-secondary');
+                button.classList.toggle('btn-selected');
+                break;
+            case 'process-equipment-and-next':
+                talkData.equipment = Array.from(document.querySelectorAll('#equipment-options .btn-selected')).map(btn => btn.dataset.value);
+                if (talkData.equipment.length > 0) {
+                    prepareEquipmentDetailPage();
+                    showStep('1.7');
+                } else {
+                    showStep('2.1');
+                }
+                break;
+            case 'select-fit':
+                button.parentElement.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('btn-selected');
+                    btn.classList.add('btn-secondary');
+                });
+                button.classList.add('btn-selected');
+                button.classList.remove('btn-secondary');
+                talkData[button.dataset.key] = button.dataset.value;
+                break;
+            case 'store-equipment-details-and-next':
+                if (talkData.equipment.includes('太陽光発電')) {
+                    talkData.solarInstalledYear = document.getElementById('solar-year').value;
+                    talkData.solarFITPrice = document.getElementById('solar-price').value;
+                    talkData.solarManufacturer = document.getElementById('solar-manufacturer').value;
+                    talkData.solarCapacity = document.getElementById('solar-capacity').value;
+                }
+                ['蓄電池', 'エコキュート', 'エネファーム', '電気自動車'].forEach(name => {
+                    const equipKey = name.replace(/\s/g, '');
+                    const input = document.getElementById(`equip-year-${equipKey}`);
+                    if(input) talkData[`equipYear${name}`] = input.value;
+                });
+                if (nextStepId) showStep(nextStepId);
+                break;
+            case 'select-time':
+                talkData.appointmentTime = button.textContent;
+                showStep(nextStepId);
+                break;
+            case 'select-time-other': {
+                const grid = button.closest('.time-selection-grid');
+                grid.querySelectorAll('button').forEach(btn => btn.classList.remove('btn-selected'));
+                button.classList.add('btn-selected');
+                document.getElementById(button.dataset.controls).classList.remove('hidden');
+                break;
+            }
+            case 'store-other-time-and-next':
+                talkData.appointmentTime = document.getElementById(button.dataset.target).value;
+                if (nextStepId) showStep(nextStepId);
+                break;
+            case 'store-customer-info-and-next':
+                talkData.customerName = document.getElementById('customer-name').value;
+                talkData.customerAddress = document.getElementById('customer-address').value;
+                talkData.customerTel = document.getElementById('customer-tel').value;
+                if (nextStepId) showStep(nextStepId);
+                break;
+            case 'show-summary': {
+                talkData.担当者 = document.getElementById('担当者-name').value;
+                const summaryHtml = generateSummaryHTML(talkData);
+                const newWindow = window.open('', '_blank');
+                newWindow.document.write(summaryHtml);
+                newWindow.document.close();
+                break;
+            }
+            case 'show-summary-modal': {
+                talkData.担当者 = document.getElementById('担当者-name')?.value || talkData.担当者 || '';
+                const summaryContent = generateSummaryContent(talkData);
+                document.getElementById('modal-content').innerHTML = summaryContent;
+                document.getElementById('modal-overlay').classList.remove('hidden');
+                document.getElementById('summary-modal').classList.remove('hidden');
+                break;
+            }
+            case 'close-modal': {
+                document.getElementById('modal-overlay').classList.add('hidden');
+                document.getElementById('summary-modal').classList.add('hidden');
+                document.getElementById('modal-content').innerHTML = '';
+                break;
+            }
+            case 'show-help':
+                if (!currentStep.startsWith('help_')) lastStepBeforeHelp = currentStep;
+                showStep(button.dataset.step);
+                break;
+            case 'hide-help':
+                if (lastStepBeforeHelp) {
+                    stepHistory = stepHistory.filter(step => !step.startsWith('help_'));
+                    showStep(lastStepBeforeHelp, true);
+                }
+                break;
+            case 'shortcut-jump':
+                shortcutReturnStep = currentStep;
+                document.getElementById('shortcut-return-btn').classList.remove('hidden');
+                showStep(button.dataset.step);
+                break;
+            case 'shortcut-return':
+                if (shortcutReturnStep) {
+                    showStep(shortcutReturnStep, true);
+                    document.getElementById('shortcut-return-btn').classList.add('hidden');
+                    shortcutReturnStep = null;
+                }
+                break;
+        }
+    });
+
+    // 起動処理
+    fetchCityName();
+    showStep('0');
 });
 </script>
 </body>
